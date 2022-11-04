@@ -1,0 +1,36 @@
+{
+  "name": "winsnow",
+  "version": "1.0.0",
+  "description": "A bot for Screeps World",
+  "main": "main.js",
+  "scripts": {
+    "push": "rollup -cw --environment DEST:main",
+    "local": "rollup -cw --environment DEST:local",
+    "build": "rollup -cw",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IDBIDO/Winsnow.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IDBIDO/Winsnow/issues"
+  },
+  "homepage": "https://github.com/IDBIDO/Winsnow#readme",
+  "devDependencies": {
+    "@types/lodash": "^3.10.1",
+    "@types/screeps": "^3.3.0",
+    "rollup": "^2.77.2",
+    "rollup-plugin-clear": "^2.0.7",
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-screeps": "^1.0.1",
+    "rollup-plugin-typescript2": "^0.32.1",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "connected-components": "^1.0.0"
+  }
+}

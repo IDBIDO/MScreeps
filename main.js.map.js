@@ -1,0 +1,1 @@
+module.exports = {"version":3,"file":"main.js","sources":["../src/main.ts"],"sourcesContent":["// 游戏入口函数\r\nexport const loop = function () {\r\n    console.log('hello world')\r\n    console.log('hhhh')\r\n}"],"names":[],"mappings":";;;;AAAA;AACa,MAAA,IAAI,GAAG,YAAA;AAChB,IAAA,OAAO,CAAC,GAAG,CAAC,aAAa,CAAC,CAAA;AAC1B,IAAA,OAAO,CAAC,GAAG,CAAC,MAAM,CAAC,CAAA;AACvB;;;;"};
