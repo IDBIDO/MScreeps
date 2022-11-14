@@ -62,11 +62,14 @@ require('超级移动优化').deletePathInRoom(roomName);
 4.战斗中遇到敌方pc不断产生新rampart挡路的情况，目前是撞上建筑物才重新寻路（原版moveTo撞上也继续撞），如果觉得需要手动提前激活重新寻路则联系我讨论
 5.在控制台输入require('超级移动优化').print()获取性能信息，鼓励发给作者用于优化
 */
-
+export function nothing() {
+    return null;
+}
 /***************************************
  *  模块参数
  */
 // 初始化参数
+
 let config = {
     地图房号最大数字超过100: false,
     changeMove: true,   // 【未启用】为creep.move增加对穿能力

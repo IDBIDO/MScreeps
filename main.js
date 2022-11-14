@@ -1,11 +1,26 @@
 'use strict';
 
+Object.defineProperty(exports, '__esModule', { value: true });
+
 /**
- * 把 obj2 的原型合并到 obj1 的原型上
- * 如果原型的键以 Getter 结尾，则将会把其挂载为 getter 属性
- * @param obj1 要挂载到的对象
- * @param obj2 要进行挂载的对象
- */
+  * 把 obj2 的原型合并到 obj1 的原型上
+  * 如果原型的键以 Getter 结尾，则将会把其挂载为 getter 属性
+  * @param obj1 要挂载到的对象
+  * @param obj2 要进行挂载的对象
+  */
+const assignPrototype = function (obj1, obj2) {
+    Object.getOwnPropertyNames(obj2.prototype).forEach(key => {
+        if (key.includes('Getter')) {
+            Object.defineProperty(obj1.prototype, key.split('Getter')[0], {
+                get: obj2.prototype[key],
+                enumerable: false,
+                configurable: true
+            });
+        }
+        else
+            obj1.prototype[key] = obj2.prototype[key];
+    });
+};
 function connectedComponents(adj) {
     var numVertices = adj.length;
     var visited = new Array(numVertices);
@@ -1991,6 +2006,77 @@ function getPlanningStructurePos(roomName, structureType, index) {
     const pos = Memory['colony'][roomName]['roomPlanning']['model'][structureType][index]['pos'];
     return pos;
 }
+function tempExtension(roomName) {
+    const temp = Memory['colony'][roomName]['roomPlanning']['temp'];
+    const extensionList = Memory['colony'][roomName]['roomPlanning']['model']['extension'];
+    temp['extension'] = {};
+    const spawn0Pos = Memory['colony'][roomName]['roomPlanning']['model']['spawn'][0]['pos'];
+    let array = Array(extensionList.length);
+    for (let i = 0; i < extensionList.length; ++i) {
+        //temp['extension'][i] = extensionList[i]['pos'];
+        const distance = distanceTwoPoints(spawn0Pos, extensionList[i]['pos']);
+        const temp = {
+            'ref': i.toString(),
+            'pos': extensionList[i]['pos'],
+            'distance': distance
+        };
+        array[i] = temp;
+    }
+    array.sort(function (a, b) {
+        if (a.distance > b.distance) { //si a es mayor, retornar 1
+            return 1;
+        }
+        if (a.distance < b.distance) { //si a es memor, retornar -1
+            return -1;
+        }
+        // a must be equal to b
+        return 0;
+    });
+    for (let i = 0; i < extensionList.length; ++i) {
+        temp['extension'][i] = array[i].pos;
+    }
+    //change model extension
+    const modelExtension = Memory['colony'][roomName]['roomPlanning']['model']['extension'];
+    for (let i = 0; i < modelExtension.length; ++i) {
+        modelExtension[i]['pos'] = temp['extension'][i];
+    }
+}
+function tempSpawn(roomName) {
+    const temp = Memory['colony'][roomName]['roomPlanning']['temp'];
+    const spawnList = Memory['colony'][roomName]['roomPlanning']['model']['spawn'];
+    temp['spawn'] = {};
+    const controllerRoomPos = Game.rooms[roomName].controller.pos;
+    const controllerPos = [controllerRoomPos.x, controllerRoomPos.y];
+    let array = Array(spawnList.length);
+    for (let i = 0; i < spawnList.length; ++i) {
+        //temp['extension'][i] = extensionList[i]['pos'];
+        const distance = distanceTwoPoints(controllerPos, spawnList[i]['pos']);
+        const temp = {
+            'ref': i.toString(),
+            'pos': spawnList[i]['pos'],
+            'distance': distance
+        };
+        array[i] = temp;
+    }
+    array.sort(function (a, b) {
+        if (a.distance < b.distance) { //si a es mayor, retornar 1
+            return 1;
+        }
+        if (a.distance > b.distance) { //si a es memor, retornar -1
+            return -1;
+        }
+        // a must be equal to b
+        return 0;
+    });
+    for (let i = 0; i < spawnList.length; ++i) {
+        temp['spawn'][i] = array[i].pos;
+    }
+    //change model extension
+    const modelExtension = Memory['colony'][roomName]['roomPlanning']['model']['spawn'];
+    for (let i = 0; i < modelExtension.length; ++i) {
+        modelExtension[i]['pos'] = temp['spawn'][i];
+    }
+}
 function generateTemporal(roomName) {
     Memory['colony'][roomName]['roomPlanning']['temp'] = {};
     Memory['colony'][roomName]['roomPlanning']['temp'];
@@ -2003,9 +2089,9 @@ function generateTemporal(roomName) {
                 model[structureName][i]['pos'];
     }
     //modify spawn order
-    //this.tempSpawn();
+    tempSpawn(roomName);
     //modify extension order
-    //this.tempExtension();
+    tempExtension(roomName);
 }
 
 /* initialize colony planning mem block */
@@ -3551,10 +3637,247 @@ module.exports = {
     // clear: clearUnused
 };
 
-// 游戏入口函数
-module.exports.loop = function () {
-    //console.log('hello world')
-    console.log('hhhh');
-    MemHack.pretick();
+class ExtendRoomPosition extends RoomPosition {
+    // public isWalkable(): boolean {
+    //     if (this.lookFor(LOOK_TERRAIN)[0] == 'wall') {
+    //         return false;
+    //     } else {
+    //         return true;
+    //     }
+    // }
+    getAdjacentPositions() {
+        const positions = [];
+        const x = this.x;
+        const y = this.y;
+        const roomName = this.roomName;
+        if (x > 0) {
+            positions.push(new RoomPosition(x - 1, y, roomName));
+        }
+        if (x < 49) {
+            positions.push(new RoomPosition(x + 1, y, roomName));
+        }
+        if (y > 0) {
+            positions.push(new RoomPosition(x, y - 1, roomName));
+        }
+        if (y < 49) {
+            positions.push(new RoomPosition(x, y + 1, roomName));
+        }
+        return positions;
+    }
+    isWalkable() {
+        if (this.lookFor(LOOK_TERRAIN)[0] == 'wall') {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+    isWalkableAndNotOccupied() {
+        if (this.isWalkable() && this.lookFor(LOOK_CREEPS).length == 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    isWalkableAndNotOccupiedAndNotReserved() {
+        if (this.isWalkableAndNotOccupied() && this.lookFor(LOOK_FLAGS).length == 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    isWalkableAndNotOccupiedAndNotReservedAndNotReservedByCreep() {
+        if (this.isWalkableAndNotOccupiedAndNotReserved() && this.lookFor(LOOK_CREEPS).length == 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    isWalkableAndNotOccupiedAndNotReservedAndNotReservedByCreepAndNotReservedByFlag() {
+        if (this.isWalkableAndNotOccupiedAndNotReservedAndNotReservedByCreep() && this.lookFor(LOOK_FLAGS).length == 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+}
+
+var mountExtensions = () => {
+    assignPrototype(RoomPosition, ExtendRoomPosition);
 };
+
+class RoomPlanningMem {
+    constructor(mainRoom) {
+        this.dpt_name = 'roomPlanning';
+        this.rootMem = Memory['colony'][mainRoom][this.dpt_name]['model'];
+    }
+    static getStructureList(roomName, structureType) {
+        return Memory['colony'][roomName]['roomPlanning']['model'][structureType];
+    }
+    static getSource1Id(roomName) {
+        return Memory['colony'][roomName]['roomPlanning']['model']['source'][0]['id'];
+    }
+    static getSource2Id(roomName) {
+        return Memory['colony'][roomName]['roomPlanning']['model']['source'][1]['id'];
+    }
+    static getMineralId(roomName) {
+        return Memory['colony'][roomName]['roomPlanning']['model']['source'][2]['id'];
+    }
+}
+
+class WorkStation {
+    constructor(pos, roomName) {
+        this.state = this.createWorkPositionState(false, false, '', 'dead');
+        this.id = this.randomID();
+        this.location = this.createLocation(roomName, pos);
+        this.distanceToSpawn = this.getDistanceToNearSpawn(pos, roomName);
+    }
+    randomID() {
+        return Math.random().toString(36).substr(2, 9);
+    }
+    getStationData() {
+        return {
+            //id: this.id,
+            state: this.state,
+            location: this.location,
+            creepConfig: this.creepConfig,
+            distanceToSpawn: this.distanceToSpawn,
+            needTransporterCreep: this.needTransporterCreep,
+            transporterSetting: this.transporterSetting
+        };
+    }
+    getDistanceToNearSpawn(pos, roomName) {
+        let spawnList = RoomPlanningMem.getStructureList(roomName, 'spawn');
+        let positionList = [];
+        for (let spawn of spawnList) {
+            positionList.push(spawn.pos);
+        }
+        return minDistance(pos, positionList);
+    }
+    createWorkPositionState(active, occupied, creepName, creepState) {
+        return {
+            active: active,
+            occupied: occupied,
+            creepName: creepName,
+            creepState: creepState
+        };
+    }
+    createLocation(roomName, pos) {
+        return {
+            roomName: roomName,
+            pos: pos
+        };
+    }
+    createCreepSpawnConfig(role, body, priority, memory) {
+        return {
+            role: role,
+            body: body,
+            priority: priority,
+            memory: memory
+        };
+    }
+    createHarvesterMemory(sourceId, containerId, linkId) {
+        return {
+            sourceId: sourceId,
+            containerId: containerId,
+            linkId: linkId,
+        };
+    }
+    createTransporterSetting(id, needWithdraw, amount, resourceType) {
+        return {
+            id: id,
+            needWithdraw: needWithdraw,
+            amount: amount,
+            resourceType: resourceType
+        };
+    }
+}
+
+class DptHarvesterMem {
+    constructor(mainRoom) {
+        this.dpt_name = 'dpt_harvest';
+        this.rootMem = Memory['colony'][mainRoom][this.dpt_name];
+    }
+    getWorkPosition() {
+        return this.rootMem['workPosition'];
+    }
+    addWorkStation(workStationId, data) {
+        this.rootMem['workStation'][workStationId] = data;
+    }
+    deleteWorkPosition(pos) {
+        let index = this.rootMem['workPosition'].indexOf(pos);
+        this.rootMem['workPosition'].splice(index, 1);
+    }
+    getTargets() {
+        return this.rootMem['targets'];
+    }
+    setTargets(targets) {
+        this.rootMem['targets'] = targets;
+    }
+    getCreepsDeadTick() {
+        return this.rootMem['creepsDeadTick'];
+    }
+    addCreepsDeadTick(creepName, tick) {
+        this.rootMem['creepsDeadTick'][creepName] = tick;
+    }
+    deleteCreepsDeadTick(creepName) {
+        delete this.rootMem['creepsDeadTick'][creepName];
+    }
+}
+
+class HarvesterWorkStation extends WorkStation {
+    constructor(pos, roomName) {
+        super(pos, roomName);
+    }
+    getSource1ID() {
+        return RoomPlanningMem.getSource1Id(this.location.roomName);
+    }
+    getSource2ID() {
+        return RoomPlanningMem.getSource2Id(this.location.roomName);
+    }
+    getMineralID() {
+        return RoomPlanningMem.getMineralId(this.location.roomName);
+    }
+    createIniHarvesterWorkStation(sourceNum) {
+        this.needTransporterCreep = true;
+        this.transporterSetting = this.createTransporterSetting(this.id, false, -1, RESOURCE_ENERGY);
+        let sourceID;
+        if (sourceNum === 'source1') {
+            sourceID = this.getSource1ID();
+        }
+        else if (sourceNum === 'source2') {
+            sourceID = this.getSource1ID();
+        }
+        else if (sourceNum === 'mineral') {
+            sourceID = this.getMineralID();
+        }
+        this.creepConfig = this.createCreepSpawnConfig('iniHarvester', [WORK, WORK, CARRY, MOVE], 1, this.createHarvesterMemory(sourceID));
+    }
+    saveToMemory() {
+        let dptHarvestMem = new DptHarvesterMem(this.location.roomName);
+        dptHarvestMem.addWorkStation(this.id, this.getStationData());
+        console.log('Harvester WS ' + this.id + ' save to memory');
+    }
+}
+
+// 游戏入口函数
+function mount() {
+    MemHack.pretick();
+}
+module.exports.loop = function () {
+    mountExtensions();
+    mount();
+    new RoomPosition(5, 18, "W8N7");
+    new HarvesterWorkStation([31, 45], "W8N7");
+    if (Game.time % 10 == 0) ;
+    //console.log(p['getAdjacentPositions']());
+    //console.log('hello world')
+    //console.log('hhhh')
+};
+
+exports.mount = mount;
 //# sourceMappingURL=main.js.map

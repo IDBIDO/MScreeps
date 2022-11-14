@@ -1,6 +1,7 @@
+import {ExtendRoomPosition} from "@/extensions/ExtendRoomPosition";
 
- 
- /**
+
+/**
   * 把 obj2 的原型合并到 obj1 的原型上
   * 如果原型的键以 Getter 结尾，则将会把其挂载为 getter 属性
   * @param obj1 要挂载到的对象
@@ -91,3 +92,17 @@ export function difference(setA, setB) {
   }
   return _difference;
 }
+
+
+export function adjacentCanStandPosition(roomName: string, pos: RoomPosition) {
+    // @ts-ignore
+    let adjPos = pos.getAdjacentPositions();
+    let adjCanStandPos = [];
+    for (let i = 0; i < adjPos.length; i++) {
+        if (adjPos[i].isWalkable()) {
+            adjCanStandPos.push(adjPos[i]);
+        }
+    }
+    return adjCanStandPos;
+}
+

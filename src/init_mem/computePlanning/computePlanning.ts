@@ -254,6 +254,94 @@ export function getPlanningStructureId(roomName: string ,structureType: string, 
     return null;
 }
 
+
+export function tempExtension(roomName: string) {
+    const temp = Memory['colony'][roomName]['roomPlanning']['temp'];
+    const extensionList = Memory['colony'][roomName]['roomPlanning']['model']['extension'];
+    temp['extension'] = {};
+
+    const spawn0Pos:[number, number] = Memory['colony'][roomName]['roomPlanning']['model']['spawn'][0]['pos'];
+    let array = Array<arrayPos>(extensionList.length);
+    for (let i = 0; i < extensionList.length; ++i) {
+        //temp['extension'][i] = extensionList[i]['pos'];
+        const distance = utils.distanceTwoPoints(spawn0Pos, extensionList[i]['pos']);
+        const temp: arrayPos = {
+            'ref': i.toString(),
+            'pos': extensionList[i]['pos'],
+            'distance': distance
+        }
+        array[i] = temp;
+    }
+    array.sort(function (a, b) {
+
+        if (a.distance > b.distance) {  //si a es mayor, retornar 1
+            return 1;
+        }
+        if (a.distance < b.distance) {  //si a es memor, retornar -1
+            return -1;
+        }
+        // a must be equal to b
+        return 0;
+
+    });
+
+    for (let i = 0; i < extensionList.length; ++i) {
+        temp['extension'][i] = array[i].pos;
+
+    }
+
+    //change model extension
+    const modelExtension = Memory['colony'][roomName]['roomPlanning']['model']['extension'];
+    for (let i = 0; i < modelExtension.length; ++i) {
+        modelExtension[i]['pos'] = temp['extension'][i];
+    }
+}
+
+export function tempSpawn(roomName: string) {
+    const temp = Memory['colony'][roomName]['roomPlanning']['temp'];
+    const spawnList = Memory['colony'][roomName]['roomPlanning']['model']['spawn'];
+    temp['spawn'] = {};
+
+    const controllerRoomPos = Game.rooms[roomName].controller.pos;
+    const controllerPos:[number, number] = [controllerRoomPos.x, controllerRoomPos.y];
+    let array = Array<arrayPos>(spawnList.length);
+    for (let i = 0; i < spawnList.length; ++i) {
+        //temp['extension'][i] = extensionList[i]['pos'];
+        const distance = utils.distanceTwoPoints(controllerPos, spawnList[i]['pos']);
+        const temp: arrayPos = {
+            'ref': i.toString(),
+            'pos': spawnList[i]['pos'],
+            'distance': distance
+        }
+        array[i] = temp;
+    }
+    array.sort(function (a, b) {
+
+        if (a.distance < b.distance) {  //si a es mayor, retornar 1
+            return 1;
+        }
+        if (a.distance > b.distance) {  //si a es memor, retornar -1
+            return -1;
+        }
+        // a must be equal to b
+        return 0;
+
+    });
+
+    for (let i = 0; i < spawnList.length; ++i) {
+        temp['spawn'][i] = array[i].pos;
+
+    }
+
+    //change model extension
+    const modelExtension = Memory['colony'][roomName]['roomPlanning']['model']['spawn'];
+    for (let i = 0; i < modelExtension.length; ++i) {
+        modelExtension[i]['pos'] = temp['spawn'][i];
+    }
+
+
+}
+
 export function generateTemporal(roomName: string) {
     Memory['colony'][roomName]['roomPlanning']['temp'] = {};
     const temp = Memory['colony'][roomName]['roomPlanning']['temp'];
@@ -269,10 +357,10 @@ export function generateTemporal(roomName: string) {
     }
 
     //modify spawn order
-    //this.tempSpawn();
+    tempSpawn(roomName);
 
     //modify extension order
-    //this.tempExtension();
+    tempExtension(roomName);
 
 
 
