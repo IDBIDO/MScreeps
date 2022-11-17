@@ -6,49 +6,62 @@ interface modelData {
 
 /******** Department *******/
 
+
+type stationType= 'source1' | 'source2' | 'mineral' | 'highway' | null;
+
+interface creepState {
+    creepName: string;
+    deadTick: number;
+    substitute: string;
+    substituteDeadTick: number;
+}
+
 type HarvesterWorkStation = 'initializer' | 'harvester';
 
 interface WorkStationData {
-        state: WorkPositionState;
 
-        location: location;
+        type: stationType;
+        orders: HarvesterWorkStationOrder[];
+
+        creepList: creepState[];
+
+        sourceInfo: HarvesterSourceInfo;
+        targetInfo: HarvesterTargetInfo
+
         creepConfig:  CreepSpawnConfig;
 
         distanceToSpawn:  number;
-        //canRenewCreep:  boolean;
         needTransporterCreep:  boolean;
         transporterSetting?:  TransporterSetting;
 }
 
-interface WorkPositionState {
-    active: boolean;
-    occupied: boolean;
-    creepName: string;
-    creepState: CreepState;
-}
-
-type CreepState =
-        'working' |
-        'renewing' |
-        'dead';
+type HarvesterWorkStationOrder = 'removeCreep' | 'addCreep' | 'addTransporter' | 'removeTransporter';
 
 interface TransporterSetting {
-        id:  string;
+        stationId: string;
         needWithdraw:  boolean;
         amount:  number;
         resourceType:  ResourceConstant;
 }
 
-interface location {
+interface HarvesterSourceInfo {
+        sourceId:  string;
         roomName:  string ;
         pos:  [ number ,  number ];
 }
 
+interface HarvesterTargetInfo {
+        targetId: string;
+        roomName: string;
+        pos: [number, number];
+
+}
 
 type harvesterRole =
         'iniHarvester'  |
         'harvester';
 
+type creepDeadState = [key: string, value: boolean];
 
 interface HarvesterTargets {
         //source1:  Source;
@@ -63,9 +76,22 @@ interface HarvesterTargets {
 
 interface  CreepSpawnConfig {
         role:  string;
-        body:  string[];
+        body:  number;          // body mode: 0 -> default, 1 -> small, 2 -> big
         priority:  number;
-        memory:  HarvesterMemory|UpgraderMemory;
+        memory:  BasicMemory | ManagerMemory;
+}
+
+interface BasicMemory {
+        working:  boolean;
+        ready:  boolean;
+        workStationID:  string;
+        departmentName:  departmentName;
+        roomName:  string;
+        dontPullMe: boolean;
+}
+
+interface ManagerMemory {
+        departmentName:  departmentName;
 }
 
 interface UpgraderMemory {
@@ -75,11 +101,7 @@ interface UpgraderMemory {
 
 }
 
-interface  HarvesterMemory {
-        sourceId: string;
-        containerId?: string;
-        linkId?: string;
-}
+
 
 
 interface Point{
