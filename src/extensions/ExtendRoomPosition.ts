@@ -25,6 +25,20 @@ export class ExtendRoomPosition extends RoomPosition {
         if (y < 49) {
             positions.push(new RoomPosition(x, y + 1, roomName));
         }
+
+        if (x > 0 && y > 0) {
+            positions.push(new RoomPosition(x - 1, y - 1, roomName));
+        }
+        if (x < 49 && y > 0) {
+            positions.push(new RoomPosition(x + 1, y - 1, roomName));
+        }
+        if (x > 0 && y < 49) {
+            positions.push(new RoomPosition(x - 1, y + 1, roomName));
+        }
+        if (x < 49 && y < 49) {
+            positions.push(new RoomPosition(x + 1, y + 1, roomName));
+        }
+
         return positions;
     }
 

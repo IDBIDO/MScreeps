@@ -9,24 +9,27 @@ export default class DptHarvesterMem {
         this.rootMem = Memory['colony'][mainRoom][this.dpt_name];
     }
 
-    getWorkPosition(): WorkStationData {
-        return this.rootMem['workPosition'];
+    getWorkStation(id: string): HarvesterWorkStationData {
+        //console.log(this.rootMem['workStation'][id])
+        //console.log(id);
+        return this.rootMem['workStation'][id];
     }
+
     addWorkStation(workStationId: string, data: {}) {
         this.rootMem['workStation'][workStationId] = data;
     }
 
-    deleteWorkPosition(pos: WorkStationData) {
+    deleteWorkPosition(pos: HarvesterWorkStationData) {
         let index = this.rootMem['workPosition'].indexOf(pos);
         this.rootMem['workPosition'].splice(index, 1);
     }
 
     getTargets(): HarvesterTargets {
-        return this.rootMem['targets'];
+        return this.rootMem['target'];
     }
 
     setTargets(targets: HarvesterTargets) {
-        this.rootMem['targets'] = targets;
+        this.rootMem['target'] = targets;
     }
 
     getCreepsDeadTick(): {} {

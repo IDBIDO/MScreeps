@@ -2,8 +2,8 @@ import {HarvesterWorkStation} from "@/workStation/harvesterWorkStation";
 
 export function iniDptHarvest(roomName: string) {
     Memory['colony'][roomName]['dpt_harvest'] = {};
-    Memory['colony'][roomName]['dpt_harvest']['workStations'] = {};
-    Memory['colony'][roomName]['dpt_harvest']['targets'] = {};
+    Memory['colony'][roomName]['dpt_harvest']['workStation'] = {};
+    Memory['colony'][roomName]['dpt_harvest']['target'] = {};
     Memory['colony'][roomName]['dpt_harvest']['creepsDeadTick'] = {};
     //Memory['colony'][roomName]['dpt_harvest']['substitutionList'] = {};
     iniWorkStation(roomName);
@@ -21,7 +21,7 @@ export function iniTargets(roomName: string) {
         linkSource1: null,
         linkSource2: null
     };
-    Memory['colony'][roomName]['dpt_harvest']['targets'] = targets;
+    Memory['colony'][roomName]['dpt_harvest']['target'] = targets;
 }
 
 

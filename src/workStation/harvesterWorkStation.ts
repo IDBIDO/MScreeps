@@ -3,18 +3,36 @@ import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
 import DptHarvesterMem from "@/access_mem/colonyMem/dptHarvesterMem";
 
 export class HarvesterWorkStation extends WorkStation   {
-    departmentName: departmentName;
+    workPositions: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
+    //mem: DptHarvesterMem;
+    distanceToSpawn: number;
+    constructor( roomName: string , id?: string ) {
+        super(roomName ,id);
 
-
-    constructor(departmentName: departmentName ,id?: string, pos?: [number, number], roomName?: string) {
-        super(id ,pos, roomName);
-        this.departmentName = departmentName;
         this.sourceInfo = {
             sourceId: null,
             roomName: roomName,
-            pos: pos,
+            pos: null,
         }
+
+        /*
+        let auxMem = new DptHarvesterMem(this.sourceInfo.roomName);
+        let auxData = auxMem.getWorkStation(this.id);
+        //console.log(auxData)
+
+        //console.log(auxMem.getWorkStation(this.id))
+        this.mem = auxData;
+        //console.log(this.mem)
+
+         */
+
     }
+
+    public getMemObject(): HarvesterWorkStationData {
+        let mem = new DptHarvesterMem(this.sourceInfo.roomName);
+        return mem.getWorkStation(this.id);
+    }
+
 
     getSource1ID(): string {
         return RoomPlanningMem.getSource1Id(this.sourceInfo.roomName);
@@ -42,7 +60,7 @@ export class HarvesterWorkStation extends WorkStation   {
 
     // only to create new work station
     //sourceId only for highway
-    public initializeHarvesterWorkStation(stationType: stationType, sourceId?: string) {
+    public initializeHarvesterWorkStation(stationType: stationType, sourceId?: string, pos?: [number, number]) {
 
         this.type = stationType;
         //this.orders = [];
@@ -59,18 +77,19 @@ export class HarvesterWorkStation extends WorkStation   {
         };
 
         this.creepConfig = {
-            role: 'initializer',
-            body: 0,        //default body option
+            body: 'default',        //default body option
             priority: 0,    //highest priority
             memory: {
                 working: false,
                 ready:  false,
+                role: 'initializer',
                 workStationID: this.id,
-                departmentName:  this.departmentName,
+                departmentName:  'dpt_harvest',
                 roomName:  this.sourceInfo.roomName,
                 dontPullMe: false,
             }
         };
+
 
         //this.distanceToSpawn = this.getDistanceToNearSpawn(pos, roomName);
 
@@ -82,16 +101,47 @@ export class HarvesterWorkStation extends WorkStation   {
             resourceType: RESOURCE_ENERGY,
         };
 
+        this.sourceInfo.pos =  pos;
+
+        let roomName = this.sourceInfo.roomName;
+        //let pos = this.sourceInfo.pos;
+
+        this.workPositions = [];
+        if(pos && roomName){
+            let auxRoomPos = new RoomPosition(pos[0], pos[1], roomName);
+            let adjPosList:RoomPosition[] = auxRoomPos['getAdjacentPositions']();
+            for (let i in adjPosList){
+                let auxPos = adjPosList[i];
+                if (auxPos['isWalkable']())
+                    this.workPositions.push([auxPos.x, auxPos.y, 0]);
+            }
+        }
+    }
+
+    protected getStationData(): HarvesterWorkStationData {
+        return {
+            type: this.type,
+            orders: this.orders,
+
+            workPositions: this.workPositions,
+            creepList: this.creepList,
+
+            sourceInfo: this.sourceInfo,
+            targetInfo: this.targetInfo,
+
+            creepConfig: this.creepConfig,
+
+            distanceToSpawn: this.distanceToSpawn,
+            needTransporterCreep: this.needTransporterCreep,
+            transporterSetting: this.transporterSetting
+        };
     }
 
     public saveToMemory(){
         let dptHarvestMem = new DptHarvesterMem(this.sourceInfo.roomName);
         dptHarvestMem.addWorkStation(this.id, this.getStationData());
+
         console.log('Harvester WS '+ this.id +' save to memory');
-    }
-
-    protected executeOrders() {
-
     }
 
 

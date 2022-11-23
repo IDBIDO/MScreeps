@@ -1,10 +1,29 @@
 
+
+
 interface modelData {
         id: string;
         pos: [number, number];
 }
 
-/******** Department *******/
+interface creepDeadData {
+        [creepName: string]: number;
+
+}
+
+interface SpawnTask {
+        creepName: string;
+        creepBodyOption: string;
+        departmentName: string;
+        workStationId: string;
+}
+
+/******************************** DEPARTMENT ***************************************/
+
+type WorkStationOrder = 'ADD_CREEP' | 'DELETE_CREEP';
+
+type StationOrder = 'addCreep' | 'removeCreep' | 'addTransporterCreep' | 'removeTransporterCreep';
+type HarvesterStationOrder = 'changeTargetInfo' | 'changeCreepConfig' ;
 
 
 type stationType= 'source1' | 'source2' | 'mineral' | 'highway' | null;
@@ -18,11 +37,12 @@ interface creepState {
 
 type HarvesterWorkStation = 'initializer' | 'harvester';
 
-interface WorkStationData {
+interface HarvesterWorkStationData {
 
         type: stationType;
         orders: HarvesterWorkStationOrder[];
 
+        workPositions: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
         creepList: creepState[];
 
         sourceInfo: HarvesterSourceInfo;
@@ -75,8 +95,8 @@ interface HarvesterTargets {
 }
 
 interface  CreepSpawnConfig {
-        role:  string;
-        body:  number;          // body mode: 0 -> default, 1 -> small, 2 -> big
+        //role:  string;
+        body:  'default' | 'manual';          // body mode: default, manual
         priority:  number;
         memory:  BasicMemory | ManagerMemory;
 }
@@ -84,6 +104,7 @@ interface  CreepSpawnConfig {
 interface BasicMemory {
         working:  boolean;
         ready:  boolean;
+        role: string;
         workStationID:  string;
         departmentName:  departmentName;
         roomName:  string;
@@ -98,10 +119,9 @@ interface UpgraderMemory {
         sourceId: string;
         containerId?: string;
         linkId?: string;
-
 }
 
-
+/***********************************************************************/
 
 
 interface Point{

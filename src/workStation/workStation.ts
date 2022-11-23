@@ -3,11 +3,14 @@ import {minDistance} from "@/init_mem/computePlanning/planningUtils";
 
 import _ from 'lodash';
 import {HarvesterWorkStation} from "@/workStation/harvesterWorkStation";
+import DptHarvesterMem from "@/access_mem/colonyMem/dptHarvesterMem";
+import {CreepSpawningMem} from "@/access_mem/colonyMem/creepSpawningMem";
 
 
 export abstract class WorkStation {
 
     id: string;
+    roomName: string;
     type: stationType;
     orders: HarvesterWorkStationOrder[];
 
@@ -18,9 +21,11 @@ export abstract class WorkStation {
 
     creepConfig:  CreepSpawnConfig;
 
-    distanceToSpawn:  number;
+    //distanceToSpawn:  number;
     needTransporterCreep:  boolean;
     transporterSetting?:  TransporterSetting;
+
+    mem: {}
 
     protected randomID(): string {
         return Math.random().toString(36).substr(2, 9);
@@ -30,10 +35,16 @@ export abstract class WorkStation {
     /********** mutator ********/
 
     //to create new work station
-    protected constructor(id?: string, pos?: [number, number], roomName?: string) {
-
+    /*
+        1. give roomName
+        2. give id, roomName
+    */
+    protected constructor(roomName: string,  id?: string) {
+        this.roomName = roomName;
         if (id) {
             this.id = id;
+            //let auxMem = new DptHarvesterMem('')
+            //this.mem = Memory['colony'][roomName]['']['workStations'][id];
         }
         else {
             this.id = this.randomID();
@@ -45,37 +56,86 @@ export abstract class WorkStation {
             this.targetInfo = null;
             this.creepConfig = null;
 
+            /*
             if (pos && roomName) {
                 this.distanceToSpawn = this.getDistanceToNearSpawn(pos, roomName);
             }
             else {
                 this.distanceToSpawn = 0;
             }
-
+            */
             this.needTransporterCreep = false;
             this.transporterSetting = undefined;
         }
     }
 
+    protected abstract getMemObject(): object;
+
+    public exeOrder( ) {
+        let mem = this.getMemObject();
+        let order = mem['orders'].shift();
+        return order;
+    }
+
+    protected sendSpawnTaskx(creepName: string, creepBodyOption: string, departmentName: string, workStationId: string, priority: number) {
+
+        let task: SpawnTask = {
+            creepName: creepName,
+            creepBodyOption: creepBodyOption,
+            departmentName: departmentName,
+            workStationId: workStationId
+        }
+
+
+    }
+
+    protected sendSpawnTask(spawnTask: SpawnTask, priority: number) {
+        let creepSpawningMem = new CreepSpawningMem(this.roomName);
+        creepSpawningMem.addSpawnTask(spawnTask, priority);
+
+    }
+
+    protected executeOrders():void {
+        let mem = this.getMemObject();
+        let order:StationOrder = mem['orders'][0];
+        if (order) {
+
+            switch (order) {
+                case "addCreep":
+                    //this.addCreep();
+                    break;
+                case "removeCreep":
+                    //this.removeCreep();
+                    break;
+                case "addTransporterCreep":
+                    //this.addTransporter();
+                    break;
+                case "removeTransporterCreep":
+                    //this.removeTransporter();
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+
+    //to create work station from memor
+    getData() {
+        let mem = new DptHarvesterMem(this.sourceInfo.roomName);
+        return mem.getWorkStation(this.id);
+        return this.mem;
+    }
+
+    addOrder(order: WorkStationOrder) {
+        this.mem['orders'].push(order);
+    }
+
+
+
 
     /********** consultor ********/
-    protected getStationData(): WorkStationData {
-            return {
-            type: this.type,
-            orders: this.orders,
-
-            creepList: this.creepList,
-
-            sourceInfo: this.sourceInfo,
-            targetInfo: this.targetInfo,
-
-            creepConfig: this.creepConfig,
-
-            distanceToSpawn: this.distanceToSpawn,
-            needTransporterCreep: this.needTransporterCreep,
-            transporterSetting: this.transporterSetting
-        };
-    }
+    protected abstract getStationData(): HarvesterWorkStationData;
 
     protected getStationId(): string {
         return this.id;
@@ -112,9 +172,8 @@ export abstract class WorkStation {
     }
 
 
-    protected createCreepSpawnConfig(role: string, option: number, priority: number, memory:BasicMemory): CreepSpawnConfig {
+    protected createCreepSpawnConfig(role: string, option: 'default'|'manual', priority: number, memory:BasicMemory): CreepSpawnConfig {
         return {
-            role: role,
             body: option,
             priority: priority,
             memory: memory
@@ -122,10 +181,10 @@ export abstract class WorkStation {
     }
 
 
-    protected createTransporterSetting(id: string, needWithdraw: boolean,
+    protected createTransporterSetting(needWithdraw: boolean,
                                        amount: number, resourceType: ResourceConstant): TransporterSetting {
         return {
-            id: id,
+            stationId: this.id,
             needWithdraw: needWithdraw,
             amount: amount,
             resourceType: resourceType
@@ -133,7 +192,9 @@ export abstract class WorkStation {
     }
     /******** end of setter ********/
 
-    protected abstract executeOrders(): void;
+    protected sendOrder(order: Order) {
+
+    }
 
 
 

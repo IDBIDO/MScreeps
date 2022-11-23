@@ -1,12 +1,12 @@
 import {Colony} from "@/colony/Colony"
 import {iniRoomPlanning} from "@/init_mem/iniRoomPlanning";
+import {iniColony} from "@/init_mem/ini_index";
 
 global.mScreeps = {
     createColony(roomName: string) : string{
         //mScreeps.createColony('W7N9');
-        iniRoomPlanning(roomName);
-        return "Planning of colony " + roomName + " created."
-
+        iniColony(roomName);
+        return 'Colony ' + roomName  + ' created';
     },
     deleteColony(roomName: string):string {
         delete Memory['colony'][roomName];
