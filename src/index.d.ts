@@ -6,43 +6,142 @@ interface modelData {
         pos: [number, number];
 }
 
-interface creepDeadData {
-        [creepName: string]: number;
-
+interface modelDataRoom {
+        id: string;
+        pos: [number, number];
+        roomName: string;
 }
+
+
+/******************************* CREEP CONFIG *******************************/
+
+interface CreepTask {
+        sourceInfo: ID_Room_position;
+        targetInfo: ID_Room_position;
+        workPosition: {
+                pos: [number, number];
+                roomName: string;
+        }
+}
+
+interface creepMemory {
+        working: boolean;
+        ready: boolean;
+        role: string;
+        creepTask: CreepTask;
+        creepIndex?: number;
+        workStationID: string;
+        departmentName: departmentName;
+        roomName: string;
+        dontPullMe: boolean;
+}
+
+type CreepWork = {
+        [role in CreepRoleConstant]: (data: {}) => ICreepConfig
+}
+
+// 所有的 creep 角色
+type CreepRoleConstant = HarvesterRoleConstant //| WorkerRoleConstant
+
+type HarvesterRoleConstant =
+        'harvester' |
+        'initializer'
+
+type WorkerRoleConstant =
+        'builder' |
+        'upgrader' |
+        'repairer'
+
+
+interface ID_Room_position {
+        id: string;
+        roomName: string;
+        pos: [number, number];
+}
+
+interface HarvesterCreepData {
+        sourceInfo: ID_Room_position;
+        targetInfo: ID_Room_position;
+        workPosition: [number, number];
+}
+
+type BaseRoleConstant =
+    'harvester' |
+    //'colonizer' |
+    //'collector' |
+    //'miner' |
+    'upgrader_base' |
+    //'filler' |
+    'builder' |
+    'repairer' |
+    'initializer'|
+    'iniQueen'|
+    'storageFiller'
+
+interface ICreepConfig {
+        /*
+        // 每次死后都会进行判断，只有返回 true 时才会重新发布孵化任务
+        isNeed?: (room: Room, creepName: string, preMemory: CreepMemory) => boolean;
+        // 准备阶段执行的方法, 返回 true 时代表准备完成
+        prepare?: (creep: Creep) => boolean;
+        // creep 获取工作所需资源时执行的方法
+        // 返回 true 则执行 target 阶段，返回其他将继续执行该方法
+        */
+        prepare?: (creep: Creep) => boolean
+
+        source?: (creep: Creep) => boolean;
+        // creep 工作时执行的方法,
+        // 返回 true 则执行 source 阶段，返回其他将继续执行该方法
+        target: (creep: Creep) => boolean;
+
+        // 每个角色默认的身体组成部分
+        //bodys: BodyPartConstant[];
+}
+
+
 
 interface SpawnTask {
         creepName: string;
-        creepBodyOption: string;
-        departmentName: string;
+        //creepBodyOption: string;
+        departmentName: departmentName;
         workStationId: string;
+        creepIndex: number;
+        creepTask: CreepTask;
 }
 
 /******************************** DEPARTMENT ***************************************/
 
-type WorkStationOrder = 'ADD_CREEP' | 'DELETE_CREEP';
+type WorkStationOrder = 'ADD_CREEP'| 'DELETE_CREEP'| 'SET_TRANSPORTER_CREEP' | 'UNSET_TRANSPORTER_CREEP';
 
 type StationOrder = 'addCreep' | 'removeCreep' | 'addTransporterCreep' | 'removeTransporterCreep';
-type HarvesterStationOrder = 'changeTargetInfo' | 'changeCreepConfig' ;
 
+type HarvesterStationType = 'source1' | 'source2' | 'mineral' | 'highway' | null;
+type BuilderStationType = 'interiorConstructor' | 'externalConstructor' | null;
+type UpgraderStationType = 'interiorUpgrader' | 'externalUpgrader' |null;
+type RepairerStationType = 'withLinkRepairer' | 'noLinkRepairer' | null;
+type TransporterStationType = 'interiorTransporter' | 'externalTransporter' | null;
 
-type stationType= 'source1' | 'source2' | 'mineral' | 'highway' | null;
+type StationType = HarvesterStationType | BuilderStationType | UpgraderStationType | RepairerStationType | TransporterStationType;
 
 interface creepState {
     creepName: string;
     deadTick: number;
-    substitute: string;
-    substituteDeadTick: number;
+    substituteCreepName?: string;
+    substituteDeadTick?: number;
+    workPosition: [number, number];
+    workRoomName: string;
+    transporterCreepName: string;
+    transporterDeadTick: number;
 }
 
 type HarvesterWorkStation = 'initializer' | 'harvester';
 
 interface HarvesterWorkStationData {
 
-        type: stationType;
-        orders: HarvesterWorkStationOrder[];
+        //type: stationType;
+        order: HarvesterWorkStationOrder[];
 
-        workPositions: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
+        workPosition: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
         creepList: creepState[];
 
         sourceInfo: HarvesterSourceInfo;

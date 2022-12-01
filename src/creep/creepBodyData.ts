@@ -29,7 +29,7 @@ export function getBody(role: string, rcl: number, option: string): BodyPartCons
     let act: BodyPartConstant[] = [];
 
     if (option == 'default') {
-        const componentNum = bodyComponentNum[role][rcl];
+        const componentNum = bodyComponentNumDefault[role][rcl];
 
         for (let i in prototype) {
             for (let j = 0; j < componentNum[i]; ++j) {
@@ -52,7 +52,7 @@ export function getBody(role: string, rcl: number, option: string): BodyPartCons
 
 
 export function ticksToSpawn(role: string, rcl: number): number {
-    const componentNum:number[] = bodyComponentNum[role][rcl.toString()];
+    const componentNum:number[] = bodyComponentNumDefault[role][rcl.toString()];
     const ticks:number = componentNum.reduce((x, y) => x + y, 0)
     return ticks*3
 }
@@ -61,6 +61,7 @@ export function ticksToSpawn(role: string, rcl: number): number {
 
 export const bodyPrototype = {
     harvester: [WORK, CARRY, MOVE],
+    initializer: [WORK, CARRY, MOVE],
     worker: [WORK, CARRY, MOVE],
     builder: [WORK, CARRY, MOVE],
     transporter: [CARRY, MOVE],
@@ -73,7 +74,7 @@ export const bodyComponentNumManual = {
 }
 
 //default body component number
-export const bodyComponentNum = {
+export const bodyComponentNumDefault = {
     //WORK  CARRY   MOVE
     harvester: {
 
@@ -96,5 +97,9 @@ export const bodyComponentNum = {
         5: [6, 3],
         6: [10, 5],
     },
+
+    initializer: {
+        1: [2, 1, 1],
+    }
 
 }

@@ -5,14 +5,17 @@ import _ from 'lodash';
 import {HarvesterWorkStation} from "@/workStation/harvesterWorkStation";
 import DptHarvesterMem from "@/access_mem/colonyMem/dptHarvesterMem";
 import {CreepSpawningMem} from "@/access_mem/colonyMem/creepSpawningMem";
+import {CreepSpawning} from "@/creep/creepSpawning";
 
 
 export abstract class WorkStation {
 
     id: string;
     roomName: string;
-    type: stationType;
-    orders: HarvesterWorkStationOrder[];
+    departmentName: departmentName;
+
+    //type: stationType;
+    order: HarvesterWorkStationOrder[];
 
     creepList: creepState[];
 
@@ -27,29 +30,40 @@ export abstract class WorkStation {
 
     mem: {}
 
+    needSubstituteCreep(): boolean {
+        return this.sourceInfo.roomName != this.roomName || this.targetInfo.roomName != this.roomName;
+    }
+
     protected randomID(): string {
         return Math.random().toString(36).substr(2, 9);
     }
 
+    public getID(): string {
+        return this.id;
+    }
 
     /********** mutator ********/
 
     //to create new work station
     /*
-        1. give roomName
-        2. give id, roomName
+        1. give roomName -> create new work station
+        2. give id, roomName -> load work station
     */
-    protected constructor(roomName: string,  id?: string) {
+    protected constructor(roomName: string,  stationType?: StationType) {
         this.roomName = roomName;
-        if (id) {
-            this.id = id;
+        if (stationType) {
+            if (stationType == 'highway') {
+                this.id = 'highway_' + Game.time;
+            } else {
+            this.id = stationType;
+            }
             //let auxMem = new DptHarvesterMem('')
             //this.mem = Memory['colony'][roomName]['']['workStations'][id];
         }
         else {
             this.id = this.randomID();
-            this.type = null;
-            this.orders = [];
+            //this.type = null;
+            this.order = [];
             this.creepList = [];
 
             this.sourceInfo = null;
@@ -71,23 +85,7 @@ export abstract class WorkStation {
 
     protected abstract getMemObject(): object;
 
-    public exeOrder( ) {
-        let mem = this.getMemObject();
-        let order = mem['orders'].shift();
-        return order;
-    }
 
-    protected sendSpawnTaskx(creepName: string, creepBodyOption: string, departmentName: string, workStationId: string, priority: number) {
-
-        let task: SpawnTask = {
-            creepName: creepName,
-            creepBodyOption: creepBodyOption,
-            departmentName: departmentName,
-            workStationId: workStationId
-        }
-
-
-    }
 
     protected sendSpawnTask(spawnTask: SpawnTask, priority: number) {
         let creepSpawningMem = new CreepSpawningMem(this.roomName);
@@ -95,40 +93,109 @@ export abstract class WorkStation {
 
     }
 
-    protected executeOrders():void {
-        let mem = this.getMemObject();
-        let order:StationOrder = mem['orders'][0];
-        if (order) {
+    protected getFreeWorkPosition(): [number, number] {
+        let workPositionList:[number, number, number][] = this.getMemObject()['workPosition'];
 
-            switch (order) {
-                case "addCreep":
-                    //this.addCreep();
-                    break;
-                case "removeCreep":
-                    //this.removeCreep();
-                    break;
-                case "addTransporterCreep":
-                    //this.addTransporter();
-                    break;
-                case "removeTransporterCreep":
-                    //this.removeTransporter();
-                    break;
-                default:
-                    break;
+        //find the first free work position
+        for (let workPosition of workPositionList) {
+            if (workPosition[2] == 0) {
+                return [workPosition[0], workPosition[1]];
             }
         }
     }
 
-
-    //to create work station from memor
-    getData() {
-        let mem = new DptHarvesterMem(this.sourceInfo.roomName);
-        return mem.getWorkStation(this.id);
-        return this.mem;
+    protected setWorkPosition(workPos: [number, number]) {
+        let workPositionList:[number, number, number][] = this.getMemObject()['workPosition'];
+        for (let workPosition of workPositionList) {
+            if (workPosition[0] == workPos[0] && workPosition[1] == workPos[1]) {
+                workPosition[2] = 1;
+            }
+        }
+    }
+    protected unSetWorkPosition(workPos: [number, number]) {
+        let workPositionList:[number, number, number][] = this.getMemObject()['workPosition'];
+        for (let workPosition of workPositionList) {
+            if (workPosition[0] == workPos[0] && workPosition[1] == workPos[1]) {
+                workPosition[2] = 0;
+            }
+        }
     }
 
+    protected addCreep() {
+
+        //generate random creep name
+        let creepName = this.id + '_' + Math.random().toString(36).substr(2, 7).toUpperCase();
+        let workPosition = this.getFreeWorkPosition();
+        this.setWorkPosition(workPosition);
+
+        let creepState: creepState = {
+            creepName: creepName,
+            deadTick: 0,
+            workPosition: workPosition,
+            workRoomName: this.roomName,
+            transporterCreepName: null,
+            transporterDeadTick: 0
+        }
+        if (this.needSubstituteCreep()) {
+            creepState.substituteCreepName = null;
+            creepState.substituteDeadTick= 0
+        }
+
+
+        let stationData = this.getMemObject();
+        stationData['creepList'].push(creepState);
+        console.log('[' + this.departmentName + ', '+ this.roomName + '] Work station '+ this.id +' add creep, now creep list size is ' + stationData['creepList'].length);
+    }
+    protected removeCreep() {
+        let creepState = this.creepList.shift();
+        this.unSetWorkPosition(creepState.workPosition);
+        console.log('[' + this.departmentName + ', '+ this.roomName + '] Work station '+ this.id +' remove creep, now creep list size is ' + this.creepList.length);
+    }
+
+    protected setTransporterCreep() {
+        let mem = this.getMemObject();
+        mem['needTransporterCreep'] = true;
+        console.log('[' + this.departmentName + ', '+ this.roomName + '] Work station '+ this.id +' set transporter creep');
+    }
+
+    protected unSetTransporterCreep() {
+        let mem = this.getMemObject();
+        mem['needTransporterCreep'] = false;
+        console.log('[' + this.departmentName + ', '+ this.roomName + '] Work station '+ this.id +' unset transporter creep');
+    }
+
+
+    public executeOrder():void {
+        let mem = this.getMemObject();
+        let order: WorkStationOrder = mem['order'][0];
+        if (order) {
+
+            switch (order) {
+                case "ADD_CREEP":
+                    this.addCreep();
+                    break;
+                case "DELETE_CREEP":
+                    this.removeCreep();
+                    break;
+                case "SET_TRANSPORTER_CREEP":
+                    this.setTransporterCreep();
+                    break;
+                case "UNSET_TRANSPORTER_CREEP":
+                    this.unSetTransporterCreep();
+                    break;
+                default:
+                    break;
+            }
+            mem['order'].shift();
+
+        }
+    }
+
+
     addOrder(order: WorkStationOrder) {
-        this.mem['orders'].push(order);
+        let mem = this.getMemObject();
+        mem['order'].push(order);
+        console.log('Work station '+ this.id +' add order: ' + order);
     }
 
 
@@ -136,11 +203,9 @@ export abstract class WorkStation {
 
     /********** consultor ********/
     protected abstract getStationData(): HarvesterWorkStationData;
-
     protected getStationId(): string {
         return this.id;
     }
-    /********* end of consultor ********/
 
 
     protected getDistanceToNearSpawn(pos: [number, number], roomName: string): number {
@@ -153,8 +218,8 @@ export abstract class WorkStation {
         return minDistance(pos, positionList);
     }
 
-    /******** setter ********/
 
+    /*
     protected  createSourceInfo(sourceId: string, roomName: string, pos: [number, number]): HarvesterSourceInfo {
         return {
             sourceId: sourceId,
@@ -162,7 +227,6 @@ export abstract class WorkStation {
             pos: pos
         };
     }
-
     protected createTargetInfo(targetId: string, roomName: string, pos: [number, number]): HarvesterTargetInfo {
         return {
             targetId: targetId,
@@ -170,8 +234,6 @@ export abstract class WorkStation {
             pos: pos
         };
     }
-
-
     protected createCreepSpawnConfig(role: string, option: 'default'|'manual', priority: number, memory:BasicMemory): CreepSpawnConfig {
         return {
             body: option,
@@ -179,10 +241,7 @@ export abstract class WorkStation {
             memory: memory
         };
     }
-
-
-    protected createTransporterSetting(needWithdraw: boolean,
-                                       amount: number, resourceType: ResourceConstant): TransporterSetting {
+    protected createTransporterSetting(needWithdraw: boolean, amount: number, resourceType: ResourceConstant): TransporterSetting {
         return {
             stationId: this.id,
             needWithdraw: needWithdraw,
@@ -190,11 +249,42 @@ export abstract class WorkStation {
             resourceType: resourceType
         };
     }
-    /******** end of setter ********/
+    */
 
-    protected sendOrder(order: Order) {
+    protected abstract getCreepTask(): CreepTask;
+
+    public sendCreepSpawnTask (creepName: string, department: departmentName, workStationId: string, creepIndex: number) {
+        let creepSpawning = new CreepSpawning(this.roomName);
+
+        creepSpawning.addSpawnTask({
+            creepName: creepName,
+            departmentName: department,
+            workStationId: workStationId,
+            creepIndex: creepIndex,
+            creepTask: this.getCreepTask(),
+        });
 
     }
+
+    protected renewCreeps(): void {
+        let mem = this.getMemObject();
+        let creepList: creepState[] = mem['creepList'];
+        for (let creepState of creepList) {
+            if (creepState.deadTick != null)
+                if (creepState.deadTick <= Game.time) {
+                    this.sendCreepSpawnTask(creepState.creepName, this.departmentName, this.id, creepList.indexOf(creepState));
+                    creepState.deadTick = null;
+                }
+        }
+    }
+
+    /******** end of setter ********/
+
+    public run(): void {
+        this.executeOrder();
+        this.renewCreeps();
+    }
+
 
 
 

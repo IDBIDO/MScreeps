@@ -3,76 +3,80 @@ import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
 import DptHarvesterMem from "@/access_mem/colonyMem/dptHarvesterMem";
 
 export class HarvesterWorkStation extends WorkStation   {
-    workPositions: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
-    //mem: DptHarvesterMem;
+    workPosition: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
     distanceToSpawn: number;
-    constructor( roomName: string , id?: string ) {
-        super(roomName ,id);
 
+    constructor( roomName: string , id?: StationType ) {
+        super(roomName ,id);
+        this.departmentName = 'dpt_harvest';
         this.sourceInfo = {
             sourceId: null,
             roomName: roomName,
             pos: null,
         }
 
-        /*
-        let auxMem = new DptHarvesterMem(this.sourceInfo.roomName);
-        let auxData = auxMem.getWorkStation(this.id);
-        //console.log(auxData)
-
-        //console.log(auxMem.getWorkStation(this.id))
-        this.mem = auxData;
-        //console.log(this.mem)
-
-         */
-
     }
 
+    // load work station from memory
     public getMemObject(): HarvesterWorkStationData {
-        let mem = new DptHarvesterMem(this.sourceInfo.roomName);
+        let mem = new DptHarvesterMem(this.roomName);
         return mem.getWorkStation(this.id);
     }
 
-
-    getSource1ID(): string {
-        return RoomPlanningMem.getSource1Id(this.sourceInfo.roomName);
-    }
-
-    getSource2ID(): string {
-        return RoomPlanningMem.getSource2Id(this.sourceInfo.roomName);
-    }
-
-    getMineralID(): string {
-        return RoomPlanningMem.getMineralId(this.sourceInfo.roomName);
-    }
-
-    getRoomSourceID(stationType: stationType): string {
+    public getRoomSourceData(stationType: HarvesterStationType): modelData {
         if (stationType == 'source1') {
-            return this.getSource1ID();
+            return RoomPlanningMem.getSource1Data(this.roomName);
         }
         else if (stationType == 'source2') {
-            return this.getSource2ID();
+            return RoomPlanningMem.getSource2Data(this.roomName);
         }
         else if (stationType == 'mineral') {
-            return this.getMineralID();
+            return RoomPlanningMem.getMineralData(this.sourceInfo.roomName);
         }
     }
 
-    // only to create new work station
-    //sourceId only for highway
-    public initializeHarvesterWorkStation(stationType: stationType, sourceId?: string, pos?: [number, number]) {
-
-        this.type = stationType;
-        //this.orders = [];
-        //this.creepList = [];
-        if(sourceId){
-            this.sourceInfo.sourceId = sourceId;
+    protected getCreepTask(): CreepTask {
+        const mem = this.getMemObject();
+        const source: modelDataRoom = {
+            id: mem.sourceInfo.sourceId,
+            roomName: mem.sourceInfo.roomName,
+            pos: mem.sourceInfo.pos,
         }
-        else this.sourceInfo.sourceId = this.getRoomSourceID(stationType);
+        const target: modelDataRoom = {
+            id: mem.targetInfo.targetId,
+            roomName: mem.targetInfo.roomName,
+            pos: mem.targetInfo.pos,
+        }
+        //workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?--------------------------
+        return {
+            sourceInfo: source,
+            targetInfo: target,
+            workPosition: null,
+        }
+
+    }
+
+    /************* INITIALIZE ***************/
+
+    // create new work station and save to memory
+    public initializeHarvesterWorkStationAndSave(stationType: HarvesterStationType, sourceId?: string, pos?: [number, number]){
+        this.initializeHarvesterWorkStation(stationType, sourceId, pos);
+        this.saveToMemory(stationType);
+    }
+
+    // create new work station
+    //sourceId only for highway, also need parameter pos
+    private initializeHarvesterWorkStation(stationType: HarvesterStationType, sourceId?: string, pos?: [number, number]) {
+
+        //this.type = stationType;
+        this.id = stationType;
+        console.log("ddddddddddddddd-->    " + this.id);
+        this.order = [];
+        this.creepList = [];
 
         this.targetInfo = {
             targetId: null,
-            roomName: this.sourceInfo.roomName,
+            roomName: this.roomName,
             pos: null,
         };
 
@@ -85,11 +89,10 @@ export class HarvesterWorkStation extends WorkStation   {
                 role: 'initializer',
                 workStationID: this.id,
                 departmentName:  'dpt_harvest',
-                roomName:  this.sourceInfo.roomName,
+                roomName:  this.roomName,
                 dontPullMe: false,
             }
         };
-
 
         //this.distanceToSpawn = this.getDistanceToNearSpawn(pos, roomName);
 
@@ -101,29 +104,38 @@ export class HarvesterWorkStation extends WorkStation   {
             resourceType: RESOURCE_ENERGY,
         };
 
-        this.sourceInfo.pos =  pos;
 
-        let roomName = this.sourceInfo.roomName;
-        //let pos = this.sourceInfo.pos;
+        if(sourceId){
+            this.sourceInfo.sourceId = sourceId;
+            this.sourceInfo.pos =  pos;
+        } else {
+            let sourceData = this.getRoomSourceData(stationType);
+            this.sourceInfo.sourceId = sourceData.id;
+            this.sourceInfo.pos = sourceData.pos;
+        }
 
-        this.workPositions = [];
-        if(pos && roomName){
-            let auxRoomPos = new RoomPosition(pos[0], pos[1], roomName);
+        let roomName = this.roomName;
+        let sourcePos = this.sourceInfo.pos;
+
+        this.workPosition = [];
+        if(sourcePos && roomName){
+            let auxRoomPos = new RoomPosition(sourcePos[0], sourcePos[1], roomName);
             let adjPosList:RoomPosition[] = auxRoomPos['getAdjacentPositions']();
             for (let i in adjPosList){
                 let auxPos = adjPosList[i];
                 if (auxPos['isWalkable']())
-                    this.workPositions.push([auxPos.x, auxPos.y, 0]);
+                    this.workPosition.push([auxPos.x, auxPos.y, 0]);
             }
         }
     }
 
     protected getStationData(): HarvesterWorkStationData {
-        return {
-            type: this.type,
-            orders: this.orders,
 
-            workPositions: this.workPositions,
+        return {
+            //type: this.type,
+            order: this.order,
+
+            workPosition: this.workPosition,
             creepList: this.creepList,
 
             sourceInfo: this.sourceInfo,
@@ -135,14 +147,18 @@ export class HarvesterWorkStation extends WorkStation   {
             needTransporterCreep: this.needTransporterCreep,
             transporterSetting: this.transporterSetting
         };
+
     }
 
-    public saveToMemory(){
-        let dptHarvestMem = new DptHarvesterMem(this.sourceInfo.roomName);
-        dptHarvestMem.addWorkStation(this.id, this.getStationData());
-
-        console.log('Harvester WS '+ this.id +' save to memory');
+    public saveToMemory(stationType: HarvesterStationType) {
+        let dptHarvestMem = new DptHarvesterMem(this.roomName);
+        const r = dptHarvestMem.addWorkStation(this.id, this.getStationData());
+        if (r) console.log('Harvester WS '+ this.id +' save to memory');
+        else console.log('ERROR: Harvester WS '+ this.id +' save to memory FAILED! STATION ALREADY EXISTS');
     }
+
+
+
 
 
 }

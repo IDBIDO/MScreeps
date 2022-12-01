@@ -1,7 +1,10 @@
-import roles from '../role'
+import roles from './creepBehaviour'
+
 
 
 export default class CreepExtension extends Creep {
+
+
     //public work(data: SourceTargetData, role: string): void
     public work(): void {
         //let data: SourceTargetData = {"target": "aaa", "source": "ddd"};
@@ -11,7 +14,9 @@ export default class CreepExtension extends Creep {
         //console.log(this.memory['role']);
         //console.log(this.memory['data'])
 
-        const creepLogic = roles[this.memory['role']](this.memory['task'])  ////////////////////////
+
+
+        const creepLogic = roles[this.memory['role']](this.memory['creepTask'])  ////////////////////////
         //const creepLogic = roles[role](data);
 
 

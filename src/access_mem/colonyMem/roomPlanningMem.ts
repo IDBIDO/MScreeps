@@ -13,15 +13,18 @@ export default class RoomPlanningMem {
         return Memory['colony'][roomName]['roomPlanning']['model'][structureType];
     }
 
-    static getSource1Id(roomName) {
-        return Memory['colony'][roomName]['roomPlanning']['model']['source'][0]['id'];
+    static getSource1Data(roomName): modelData {
+        return Memory['colony'][roomName]['roomPlanning']['model']['source'][0];
     }
-    static getSource2Id(roomName) {
-        return Memory['colony'][roomName]['roomPlanning']['model']['source'][1]['id'];
+
+    static getSource2Data(roomName): modelData {
+        return Memory['colony'][roomName]['roomPlanning']['model']['source'][1];
     }
-    static getMineralId(roomName) {
-        return Memory['colony'][roomName]['roomPlanning']['model']['source'][2]['id'];
+
+    static getMineralData(roomName): modelData {
+        return Memory['colony'][roomName]['roomPlanning']['model']['source'][2];
     }
+
 
 
 

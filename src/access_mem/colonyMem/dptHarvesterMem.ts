@@ -15,8 +15,18 @@ export default class DptHarvesterMem {
         return this.rootMem['workStation'][id];
     }
 
-    addWorkStation(workStationId: string, data: {}) {
+    addWorkStation(workStationId: string, data: {}): boolean {
+        /*
+        if (this.rootMem['workStation'][workStationId] == undefined) {
+            this.rootMem['workStation'][workStationId] = data;
+            return true;
+        } else {
+            return false;
+        }
+        */
         this.rootMem['workStation'][workStationId] = data;
+        return true;
+        //this.rootMem['workStation'][workStationId] = data;
     }
 
     deleteWorkPosition(pos: HarvesterWorkStationData) {
