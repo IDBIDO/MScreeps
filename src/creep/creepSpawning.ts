@@ -67,7 +67,7 @@ export class CreepSpawning {
     }
 
     getCreepConfig(spawnTask: SpawnTask) {
-        return Memory['colony'][this.roomName][spawnTask.departmentName]['workStation'][spawnTask.workStationId]['creepConfig'];
+        return Memory['colony'][this.roomName][spawnTask.departmentName][spawnTask.workStationId]['creepConfig'];
     }
 
     spawnCreep(spawnTask: SpawnTask, spawnId: string):ScreepsReturnCode {

@@ -1,10 +1,11 @@
 import {WorkStation} from "@/workStation/workStation";
 import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
-import DptHarvesterMem from "@/access_mem/colonyMem/dptHarvesterMem";
+import ColonyMem from "@/access_mem/colonyMem";
 
 export class HarvesterWorkStation extends WorkStation   {
     workPosition: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
     distanceToSpawn: number;
+
 
     constructor( roomName: string , id?: StationType ) {
         super(roomName ,id);
@@ -14,25 +15,16 @@ export class HarvesterWorkStation extends WorkStation   {
             roomName: roomName,
             pos: null,
         }
-
     }
 
     // load work station from memory
     public getMemObject(): HarvesterWorkStationData {
-        let mem = new DptHarvesterMem(this.roomName);
-        return mem.getWorkStation(this.id);
-    }
 
-    public getRoomSourceData(stationType: HarvesterStationType): modelData {
-        if (stationType == 'source1') {
-            return RoomPlanningMem.getSource1Data(this.roomName);
-        }
-        else if (stationType == 'source2') {
-            return RoomPlanningMem.getSource2Data(this.roomName);
-        }
-        else if (stationType == 'mineral') {
-            return RoomPlanningMem.getMineralData(this.sourceInfo.roomName);
-        }
+        const colonyMem = new ColonyMem(this.roomName);
+        return colonyMem.getWorkStationMem(this.departmentName, this.id as StationType);
+
+        //let mem = new DptHarvesterMem(this.roomName);
+        //return mem.getWorkStation(this.id);
     }
 
     protected getCreepTask(): CreepTask {
@@ -56,7 +48,45 @@ export class HarvesterWorkStation extends WorkStation   {
 
     }
 
+    protected getStationData(): HarvesterWorkStationData {
+
+        return {
+            //type: this.type,
+            order: this.order,
+
+            workPosition: this.workPosition,
+            creepList: this.creepList,
+
+            sourceInfo: this.sourceInfo,
+            targetInfo: this.targetInfo,
+
+            creepConfig: this.creepConfig,
+
+            distanceToSpawn: this.distanceToSpawn,
+            needTransporterCreep: this.needTransporterCreep,
+            transporterSetting: this.transporterSetting
+        };
+
+    }
+    /***************** ORDER ***********************/
+
+
+
     /************* INITIALIZE ***************/
+
+    public getRoomSourceData(stationType: HarvesterStationType): modelData {
+        const colonyMem = new ColonyMem(this.roomName);
+        const data = colonyMem.getRoomPlanningMem();
+        if (stationType == 'source1') {
+            return data.getSource1Data()
+        }
+        else if (stationType == 'source2') {
+            return data.getSource2Data()
+        }
+        else if (stationType == 'mineral') {
+            return data.getMineralData()
+        }
+    }
 
     // create new work station and save to memory
     public initializeHarvesterWorkStationAndSave(stationType: HarvesterStationType, sourceId?: string, pos?: [number, number]){
@@ -70,7 +100,6 @@ export class HarvesterWorkStation extends WorkStation   {
 
         //this.type = stationType;
         this.id = stationType;
-        console.log("ddddddddddddddd-->    " + this.id);
         this.order = [];
         this.creepList = [];
 
@@ -80,9 +109,15 @@ export class HarvesterWorkStation extends WorkStation   {
             pos: null,
         };
 
+        let bodyType: 'default' | 'big' = 'default';
+        let priority = 0;
+        if (stationType.includes('highway')) {
+            bodyType = 'big';
+            priority = 1;
+        }
         this.creepConfig = {
-            body: 'default',        //default body option
-            priority: 0,    //highest priority
+            body: bodyType,        //default body option
+            priority: priority,    //highest priority
             memory: {
                 working: false,
                 ready:  false,
@@ -129,33 +164,19 @@ export class HarvesterWorkStation extends WorkStation   {
         }
     }
 
-    protected getStationData(): HarvesterWorkStationData {
-
-        return {
-            //type: this.type,
-            order: this.order,
-
-            workPosition: this.workPosition,
-            creepList: this.creepList,
-
-            sourceInfo: this.sourceInfo,
-            targetInfo: this.targetInfo,
-
-            creepConfig: this.creepConfig,
-
-            distanceToSpawn: this.distanceToSpawn,
-            needTransporterCreep: this.needTransporterCreep,
-            transporterSetting: this.transporterSetting
-        };
-
-    }
 
     public saveToMemory(stationType: HarvesterStationType) {
-        let dptHarvestMem = new DptHarvesterMem(this.roomName);
-        const r = dptHarvestMem.addWorkStation(this.id, this.getStationData());
+        //let dptHarvestMem = new DptHarvesterMem(this.roomName);
+        //const r = dptHarvestMem.addWorkStation(this.id, this.getStationData());
+
+        const colonyMem = new ColonyMem(this.roomName);
+        const r = colonyMem.addWorkStation(this.departmentName, this.id as StationType, this.getStationData());
+
         if (r) console.log('Harvester WS '+ this.id +' save to memory');
         else console.log('ERROR: Harvester WS '+ this.id +' save to memory FAILED! STATION ALREADY EXISTS');
     }
+
+
 
 
 

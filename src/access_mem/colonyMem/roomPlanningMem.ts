@@ -3,26 +3,28 @@
 export default class RoomPlanningMem {
 
     rootMem: {};
+    roomName: string;
     dpt_name: memConstant = 'roomPlanning';
 
     constructor(mainRoom: string) {
+        this.roomName = mainRoom;
         this.rootMem = Memory['colony'][mainRoom][this.dpt_name]['model'];
     }
 
-    static getStructureList(roomName: string, structureType: string) {
-        return Memory['colony'][roomName]['roomPlanning']['model'][structureType];
+    getStructureList(structureType: string) {
+        return Memory['colony'][this.roomName]['roomPlanning']['model'][structureType];
     }
 
-    static getSource1Data(roomName): modelData {
-        return Memory['colony'][roomName]['roomPlanning']['model']['source'][0];
+    getSource1Data(): modelData {
+        return Memory['colony'][this.roomName]['roomPlanning']['model']['source'][0];
     }
 
-    static getSource2Data(roomName): modelData {
-        return Memory['colony'][roomName]['roomPlanning']['model']['source'][1];
+    getSource2Data(): modelData {
+        return Memory['colony'][this.roomName]['roomPlanning']['model']['source'][1];
     }
 
-    static getMineralData(roomName): modelData {
-        return Memory['colony'][roomName]['roomPlanning']['model']['source'][2];
+    getMineralData(): modelData {
+        return Memory['colony'][this.roomName]['roomPlanning']['model']['source'][2];
     }
 
 

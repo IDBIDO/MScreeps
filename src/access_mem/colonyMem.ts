@@ -1,7 +1,6 @@
 import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
-import DptHarvesterMem from "@/access_mem/colonyMem/dptHarvesterMem";
-import DptLogisticMem from "@/access_mem/colonyMem/dptLogisticMem";
-import DptBuildMem from "@/access_mem/colonyMem/dptBuildMem";
+import {CreepSpawningMem} from "@/access_mem/colonyMem/creepSpawningMem";
+
 
 
 export default class ColonyMem {
@@ -15,25 +14,56 @@ export default class ColonyMem {
         this.mainRoot = Memory['colony'][mainRoom];
     }
 
+    /*************************************** ROOM PLANNING ACCESS ***************************************/
+
     /* Planning mem */
     getRoomPlanningMem(): RoomPlanningMem {
         return new RoomPlanningMem(this.mainRoomName);
     }
 
-    /* Department harvester mem */
-    getDptHarvesterMem(): DptHarvesterMem {
-        return new DptHarvesterMem(this.mainRoomName);
+    /**************************************** CREEP SPAWNING ACCESS ******************************************/
+
+    getCreepSpawningMem() {
+        return new CreepSpawningMem(this.mainRoomName);
     }
 
-    /* Department logistic mem */
-    getDptLogisticMem(): DptLogisticMem {
-        return new DptLogisticMem(this.mainRoomName)
+
+    /*************************************** DEPARTMENTS ACCESS *************************************/
+
+    // GET ALL WORK STATION OF DPT
+    getDptWorkStationsMem(dptName: departmentName) {
+        return this.mainRoot[dptName];
     }
 
-    /* Department builder mem */
-    getDptBuilderMem(): DptBuildMem {
-        return new DptBuildMem(this.mainRoomName)
+    // GET SPECIFIC WORK STATION
+    getWorkStationMem(dptName: departmentName, workStationId: StationType) {
+        return this.mainRoot[dptName][workStationId];
     }
+
+    addWorkStation(dptName: departmentName, workStationId: StationType, data: object): boolean {
+        /*
+        if (this.rootMem['workStation'][workStationId] == undefined) {
+            this.rootMem['workStation'][workStationId] = data;
+            return true;
+        } else {
+            return false;
+        }
+        */
+        if (this.mainRoot[dptName][workStationId] == undefined) {
+            this.mainRoot[dptName][workStationId] = data;
+            return true;
+        }
+        return false;
+
+    }
+
+
+
+
+
+
+
+
 
 
 

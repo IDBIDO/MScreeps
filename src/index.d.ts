@@ -16,6 +16,9 @@ interface modelDataRoom {
 /******************************* CREEP CONFIG *******************************/
 
 interface CreepTask {
+
+        taskID?: string;
+        taskType?: string;
         sourceInfo: ID_Room_position;
         targetInfo: ID_Room_position;
         workPosition: {
@@ -41,11 +44,14 @@ type CreepWork = {
 }
 
 // 所有的 creep 角色
-type CreepRoleConstant = HarvesterRoleConstant //| WorkerRoleConstant
+type CreepRoleConstant = HarvesterRoleConstant | TransporterRoleConstant //| WorkerRoleConstant
 
 type HarvesterRoleConstant =
         'harvester' |
         'initializer'
+
+type TransporterRoleConstant =
+        'transporter';
 
 type WorkerRoleConstant =
         'builder' |
@@ -111,6 +117,51 @@ interface SpawnTask {
 
 /******************************** DEPARTMENT ***************************************/
 
+
+interface transferTaskOperation {
+        // creep 工作时执行的方法
+        target: (creep: Creep) => boolean
+        // creep 非工作(收集资源时)执行的方法
+        source: (creep: Creep) => boolean
+}
+
+type LogisticTaskType =
+    'MOVE' | 'TRANSFER' | 'WITHDRAW' | 'FILL'
+
+// logistics department
+interface logisticTask {
+        taskID: string;
+        type: LogisticTaskType
+        //sourceInfo: ID_Room_position;
+        targetInfo: ID_Room_position;
+
+        operationCreepName: string;
+}
+
+type LogisticOrder =  'removeCreep' | 'addCreep';
+
+interface LogisticWorkStationData {
+
+        //type: stationType;
+        order: LogisticOrder[]
+
+        creepList: creepState[];
+
+        sourceInfo: HarvesterSourceInfo;
+        targetInfo: HarvesterTargetInfo
+
+        creepConfig:  CreepSpawnConfig;
+
+        //distanceToSpawn:  number;
+        //needTransporterCreep:  boolean;
+        //transporterSetting?:  TransporterSetting;
+        taskList: {
+                temporalTask: {};
+                permanentTask: {};
+        }
+        availableCreep: string[]
+}
+
 type WorkStationOrder = 'ADD_CREEP'| 'DELETE_CREEP'| 'SET_TRANSPORTER_CREEP' | 'UNSET_TRANSPORTER_CREEP';
 
 type StationOrder = 'addCreep' | 'removeCreep' | 'addTransporterCreep' | 'removeTransporterCreep';
@@ -119,9 +170,9 @@ type HarvesterStationType = 'source1' | 'source2' | 'mineral' | 'highway' | null
 type BuilderStationType = 'interiorConstructor' | 'externalConstructor' | null;
 type UpgraderStationType = 'interiorUpgrader' | 'externalUpgrader' |null;
 type RepairerStationType = 'withLinkRepairer' | 'noLinkRepairer' | null;
-type TransporterStationType = 'interiorTransporter' | 'externalTransporter' | null;
+type LogisticStationType = 'interiorTransporter' | 'externalTransporter' | null;
 
-type StationType = HarvesterStationType | BuilderStationType | UpgraderStationType | RepairerStationType | TransporterStationType;
+type StationType = HarvesterStationType | BuilderStationType | UpgraderStationType | RepairerStationType | LogisticStationType;
 
 interface creepState {
     creepName: string;
@@ -154,7 +205,9 @@ interface HarvesterWorkStationData {
         transporterSetting?:  TransporterSetting;
 }
 
-type HarvesterWorkStationOrder = 'removeCreep' | 'addCreep' | 'addTransporter' | 'removeTransporter';
+type HarvesterWorkStationOrder = 'DELETE_CREEP' | 'ADD_CREEP' | 'SET_TRANSPORTER_CREEP' | 'UNSET_TRANSPORTER_CREEP';
+
+//type LogisticWorkStationOrder = 'ADD_CREEP' | 'REMOVE_CREEP'
 
 interface TransporterSetting {
         stationId: string;
@@ -176,9 +229,6 @@ interface HarvesterTargetInfo {
 
 }
 
-type harvesterRole =
-        'iniHarvester'  |
-        'harvester';
 
 type creepDeadState = [key: string, value: boolean];
 
@@ -195,7 +245,7 @@ interface HarvesterTargets {
 
 interface  CreepSpawnConfig {
         //role:  string;
-        body:  'default' | 'manual';          // body mode: default, manual
+        body:  'default' | 'big';          // body mode: default, manual
         priority:  number;
         memory:  BasicMemory | ManagerMemory;
 }
@@ -203,7 +253,7 @@ interface  CreepSpawnConfig {
 interface BasicMemory {
         working:  boolean;
         ready:  boolean;
-        role: string;
+        role: CreepRoleConstant;
         workStationID:  string;
         departmentName:  departmentName;
         roomName:  string;

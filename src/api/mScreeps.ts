@@ -2,12 +2,14 @@ import {Colony} from "@/colony/Colony"
 import {iniRoomPlanning} from "@/init_mem/iniRoomPlanning";
 import {iniColony} from "@/init_mem/ini_index";
 import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
+import ColonyMem from "@/access_mem/colonyMem";
 
 global.mScreeps = {
     createColony(roomName: string) : string{
-        //mScreeps.createColony('W7N9');
+        //mScreeps.createColony('W7N7');
         iniColony(roomName);
-        const spawnList = RoomPlanningMem.getStructureList(roomName, 'spawn');
+        const colonyMem = new ColonyMem(roomName);
+        let spawnList: modelData[] = colonyMem.getRoomPlanningMem().getStructureList('spawn');
         const roomObject = new Room(roomName);
         //roomObject.createConstructionSite(spawnList[0].pos[0], spawnList[0].pos[1], STRUCTURE_SPAWN);
         roomObject.createFlag(spawnList[0].pos[0], spawnList[0].pos[1], 'spawn');

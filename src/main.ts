@@ -20,7 +20,7 @@ module.exports.loop = function() {
     //let p: RoomPosition = new RoomPosition(5, 18, "W8N7");
 
 
-    let harvesterStation = new HarvesterWorkStation("W7N7");
+    let harvesterStation = new HarvesterWorkStation("W7N7", "source1");
 
 
     // get reference for workStation o6vrzxlzq
@@ -43,7 +43,6 @@ module.exports.loop = function() {
         let mem = harvesterStation.getMemObject();
         console.log(mem.workPosition);
         //mem.type = 'source2';
-        mem.order.push('addCreep');
         console.log(harvesterStation.getID())
         console.log(mem.workPosition);
         harvesterStation.addOrder('ADD_CREEP');
@@ -64,7 +63,7 @@ module.exports.loop = function() {
     }
 
     /*
-    mScreeps.createColony('W8N7');
+    mScreeps.createColony('W7N7');
 
 
      */
