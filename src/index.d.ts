@@ -130,7 +130,7 @@ type LogisticTaskType =
 
 // logistics department
 interface logisticTask {
-        taskID: string;
+        //taskID: string;
         type: LogisticTaskType
         //sourceInfo: ID_Room_position;
         targetInfo: ID_Room_position;
@@ -155,10 +155,7 @@ interface LogisticWorkStationData {
         //distanceToSpawn:  number;
         //needTransporterCreep:  boolean;
         //transporterSetting?:  TransporterSetting;
-        taskList: {
-                temporalTask: {};
-                permanentTask: {};
-        }
+        taskList: {}
         availableCreep: string[]
 }
 

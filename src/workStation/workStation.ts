@@ -31,7 +31,8 @@ export abstract class WorkStation {
     mem: {}
 
     needSubstituteCreep(): boolean {
-        return this.sourceInfo.roomName != this.roomName || this.targetInfo.roomName != this.roomName;
+        return false;
+        //return this.sourceInfo.roomName != this.roomName || this.targetInfo.roomName != this.roomName;
     }
 
     protected randomID(): string {
@@ -92,6 +93,9 @@ export abstract class WorkStation {
 
     protected getFreeWorkPosition(): [number, number] {
         let workPositionList:[number, number, number][] = this.getMemObject()['workPosition'];
+        if (!workPositionList) {
+            return null;
+        }
 
         //find the first free work position
         for (let workPosition of workPositionList) {
@@ -99,6 +103,7 @@ export abstract class WorkStation {
                 return [workPosition[0], workPosition[1]];
             }
         }
+        return null;
     }
 
     protected setWorkPosition(workPos: [number, number]) {
@@ -123,8 +128,8 @@ export abstract class WorkStation {
         //generate random creep name
         let creepName = this.id + '_' + Math.random().toString(36).substr(2, 7).toUpperCase();
         let workPosition = this.getFreeWorkPosition();
-        this.setWorkPosition(workPosition);
-
+        if (workPosition) this.setWorkPosition(workPosition);
+        else workPosition = null;
         let creepState: creepState = {
             creepName: creepName,
             deadTick: 0,
@@ -253,9 +258,11 @@ export abstract class WorkStation {
 
     /******** end of setter ********/
 
+    protected abstract otherOperation(): void;
     public run(): void {
         this.executeOrder();
         this.renewCreeps();
+        this.otherOperation();
     }
 
 

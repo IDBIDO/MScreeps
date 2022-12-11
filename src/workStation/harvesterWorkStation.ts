@@ -70,7 +70,9 @@ export class HarvesterWorkStation extends WorkStation   {
     }
     /***************** ORDER ***********************/
 
+    protected otherOperation() {
 
+    }
 
     /************* INITIALIZE ***************/
 

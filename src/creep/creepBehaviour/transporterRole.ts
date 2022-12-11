@@ -72,7 +72,7 @@ export const transferTaskOperations: { [task in LogisticTaskType]: transferTaskO
                     // 都填满了，任务完成
 
                     const logisticStation = new LogisticWorkStation(creep.memory['roomName'], creep.memory['workStationID']);
-                    logisticStation.removeTemporalTask(creepTask.taskID);
+                    logisticStation.removeTask(creepTask.taskID);
                     creepTask.taskID = null;
 
                     return true

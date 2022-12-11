@@ -18,17 +18,18 @@ export class CreepSpawning {
     }
 
     getCreepSpawnConfig(department: departmentName, workStationId: string) {
-        const creepConfig = Memory['colony'][this.roomName][department]['workStation'][workStationId]['creepConfig'];
+        const creepConfig = Memory['colony'][this.roomName][department][workStationId]['creepConfig'];
         return creepConfig;
     }
 
     getCreepWorkPosition(creepName: string, department: departmentName, workStationId: string, creepIndex: number): RoomPosition {
 
-        const creepList = Memory['colony'][this.roomName][department]['workStation'][workStationId]['creepList'];
+        const creepList = Memory['colony'][this.roomName][department][workStationId]['creepList'];
         const creepState = creepList[creepIndex];
         const creepWorkPosition = creepState['workPosition'];
+        if (!creepWorkPosition) return null;            // logistic department don't have workPosition
         const workRoomName = creepState['workRoomName'];
-        return new RoomPosition(creepWorkPosition[0], creepWorkPosition[0], workRoomName);
+        return new RoomPosition(creepWorkPosition[0], creepWorkPosition[1], workRoomName);
     }
 
     addSpawnTask(spawnTask: SpawnTask) {
@@ -79,24 +80,33 @@ export class CreepSpawning {
         creepMemory.creepTask = spawnTask.creepTask;
         const workPos = this.getCreepWorkPosition(creepName, spawnTask.departmentName, spawnTask.workStationId, spawnTask.creepIndex);
 
-        creepMemory.creepTask.workPosition = {
-            pos: [workPos.x, workPos.y],
-            roomName: workPos.roomName
+        if (workPos) {
+            creepMemory.creepTask.workPosition = {
+                pos: [workPos.x, workPos.y],
+                roomName: workPos.roomName
+            }
+        } else {
+            creepMemory.creepTask.workPosition = null;
         }
 
 
         let energyRCL = getEnergyRCL(Game.rooms[this.roomName].energyCapacityAvailable);
-        console.log('energyRCL: '+energyRCL);
+        //console.log('energyRCL: '+energyRCL);
 
         let creepBody = getBody(creepMemory['role'], energyRCL, creepConfig['body']);
-        console.log('role: '+creepMemory['role']);
-        console.log('creepBody: '+creepBody);
+        //console.log('role: '+creepMemory['role']);
+        //console.log('creepBody: '+creepBody);
 
 
         let creepResult = spawn.spawnCreep(creepBody, creepName, {memory: creepMemory});
         return creepResult;
     }
 
+    private setCreepDeadTime(spawnTask: SpawnTask) {
+        const creepList = Memory['colony'][this.roomName][spawnTask.departmentName][spawnTask.workStationId]['creepList'];
+        const creepState = creepList[spawnTask.creepIndex];
+        creepState['deadTick'] = Game.time + 1505;
+    }
     run() {
         for (let spawnId of this.getSpawnIdList()) {
             let spawn = Game.getObjectById(spawnId as Id<StructureSpawn>);
@@ -110,6 +120,7 @@ export class CreepSpawning {
                     const creepResult = this.spawnCreep(spawnTask, spawnId);
                     if (creepResult == OK) {
                         this.removeSpawnTask(spawnTask, priority);
+                        this.setCreepDeadTime(spawnTask);
                         //this.removeSpawnId(spawnId);
                     }
                     break;

@@ -7,7 +7,8 @@ const harvesterRole:{
     initializer: (data: CreepTask): ICreepConfig => ({
         source: (creep: Creep): boolean => {
             if (creep.harvest(Game.getObjectById(data.sourceInfo.id as Id<Source>)) === ERR_NOT_IN_RANGE) {
-                const pos = new RoomPosition(data.workPosition.pos[0], data.workPosition[1], data.workPosition.roomName);
+                const pos = new RoomPosition(data.workPosition.pos[0], data.workPosition.pos[1], data.workPosition.roomName);
+                console.log(pos)
                 creep.moveTo(pos);
             }
 
