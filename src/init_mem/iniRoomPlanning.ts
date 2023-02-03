@@ -66,6 +66,3 @@ export function  generateLinkReference(linkList:[], roomName: string): void {
 export function generateRoadReference(roadList:[], roomName: string): void {
     computePlanning.getRoadReference(roadList, roomName);
 }
-
-
-

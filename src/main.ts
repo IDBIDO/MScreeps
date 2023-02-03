@@ -1,75 +1,103 @@
-// 游戏入口函数
-
-import * as mScreeps from "./api/mScreeps"
+import * as mScreeps from "./mScreeps"
 import MemHack from "./external_modules/MemHack"
 import * as SuperMove from "./external_modules/SuperMove"
 import mountExtensions from "@/extensions/mountExtensions";
+import {CreepSpawning} from "@/creep/creepSpawing";
 import {HarvesterWorkStation} from "@/workStation/harvesterWorkStation";
-import {CreepSpawning} from "@/creep/creepSpawning";
 import {LogisticWorkStation} from "@/workStation/logisticWorkStation";
+import {ColonyStatus} from "@/colony/colonyStatus";
 
+//import { open } from 'node:fs/promises';
+
+//import * as fileSystem from 'fs'
+import * as lodash from 'lodash';
+import {OperationResearch} from "@/colony/operationResearch";
+import {BuilderWorkStation} from "@/workStation/builderWorkStation";
 export function mount() {
-    SuperMove.nothing();
-    MemHack.pretick();
-    mScreeps.nothing();
+    mScreeps.nothing();     //api
+    SuperMove.nothing();    //move module
+    MemHack.pretick();      //memory hack
     mountExtensions();
 }
 
-export function testHarvester() {
-    let harvesterStation = new HarvesterWorkStation("W7N7");
-    harvesterStation.initializeHarvesterWorkStationAndSave('source2');
-    //harvesterStation.saveToMemory()
-    //console.log(harvesterStation.id)
-    let mem = harvesterStation.getMemObject();
-    console.log(mem.workPosition);
-    //mem.type = 'source2';
-    console.log(harvesterStation.getID())
-    console.log(mem.workPosition);
-    harvesterStation.addOrder('ADD_CREEP');
+export function testCreepSpawn() {
+    const creepSpawn = new CreepSpawning('W5N8');
+    if(Game.time%10 == 10) {
+        creepSpawn.addSpawnId('ab0df59d224e771');
+        const colonyStatus = new ColonyStatus('W5N8');
+        colonyStatus.updateStorageID('ab0df59d224e771');
+    }
+    creepSpawn.run();
 
-    //harvesterStation.addOrder('DELETE_CREEP');
-    harvesterStation.executeOrder();
-    harvesterStation.run();
 }
 
-export function testLogistics() {
-    let logisticsStation = new LogisticWorkStation("W7N7", 'interiorTransporter');
-    logisticsStation.addOrder('ADD_CREEP');
-    //logisticsStation.executeOrder();
-    logisticsStation.run();
+
+
+export function testHarvesterStation() {
+    const station = new HarvesterWorkStation('W5N8', 'source1');
+    if (Game.time%10 == 10) {
+        const order: HarvesterWorkStationOrder = {
+            name: "ADD_CREEP",
+            data: null
+        }
+        station.addOrder(order);
+    }
+    if (Game.time%10 == 10) {
+        const order: HarvesterWorkStationOrder = {
+            name: "SET_TRANSPORTER_CREEP",
+            data: null
+        }
+        station.addOrder(order);
+        console.log('set transporter creep');
+    }
+
+    station.run();
+
+}
+
+export function testLogisticStation() {
+    const station = new LogisticWorkStation('W5N8', 'internal');
+    station.run();
+
+}
+
+export function testRunDPT() {
+    const harvesterDPT = new HarvesterWorkStation('W5N8', 'source1');
+    harvesterDPT.run();
+    //console.log(1);
+    const harvesterDPT2 = new HarvesterWorkStation('W5N8', 'source2');
+    harvesterDPT2.run();
+    //console.log(2);
+    const logisticDPT = new LogisticWorkStation('W5N8', 'internal');
+    logisticDPT.run();
+    //console.log(3);
+
+    const builderDPT = new BuilderWorkStation('W5N8', 'internal');
+    builderDPT.run();
+    //console.log(4)
+
+    const creepSpawn = new CreepSpawning('W5N8');
+    creepSpawn.run();
+    if (Game.time%10 == 10) { creepSpawn.addSpawnId('4ce79638dbc2076');
+        console.log(33)}
+    //console.log(5);
+
+
 }
 
 module.exports.loop = function() {
 
+
     mount();
-    //return
+    //console.log(Game.time%10);
+    //return;
 
-    let harvesterStation = new HarvesterWorkStation("W7N7", "source1");
+    //const operationResearch = new OperationResearch('W5N8');
+    //operationResearch.run();
 
+    testRunDPT();
 
-    // get reference for workStation o6vrzxlzq
-    //let t = new HarvesterWorkStation("W8N7", "o6vrzxlzg");
-
-    //let creepSpawning = new CreepSpawning("W8N7");
-
-    //console.log(t.getData())
-    //console.log(x)
-    if (Game.time % 10 == 10) {
-        let creepSpawning = new CreepSpawning("W7N7");
-        creepSpawning.addSpawnId('f54a18f148a581e');
-        console.log(creepSpawning.getSpawnIdList());
-    }
-    //console.log(Game.time)
-    console.log(Game.time % 10)
-    if (Game.time % 10 == 0) {
-
-        //testHarvester();
-        //testLogistics();
-    }
-
-    // creep spawning
-    let creepSpawning = new CreepSpawning("W7N7");
-    creepSpawning.run();
+   
 
 
     for (let creep of Object.values(Game.creeps)) {
@@ -77,8 +105,6 @@ module.exports.loop = function() {
     }
 
     /*
-    mScreeps.createColony('W7N7');
-
-
-     */
+    mScreeps.createColony('W5N8');
+    */
 }

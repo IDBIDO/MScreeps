@@ -3,7 +3,10 @@ import screeps from 'rollup-plugin-screeps'
 import copy from 'rollup-plugin-copy'
 import typescript from 'rollup-plugin-typescript2' // <== 新增这一行
 
-
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+//import nodePolyfills from 'rollup-plugin-node-polyfills';
+import nodePolyfills from 'rollup-plugin-polyfill-node';
 let config
 // 根据指定的目标获取对应的配置项
 if (!process.env.DEST) console.log("未指定目标, 代码将被编译但不会上传")
@@ -44,12 +47,16 @@ export default {
         // 清除上次编译成果
         clear({ targets: ["dist"] }),
         // 模块化依赖
-        //commonjs(),
 
+        //nodeResolve({preferBuiltins: false}),
+        commonjs(),
+        //nodePolyfills(),
         // 编译 ts
         typescript({ tsconfig: "./tsconfig.json" }), // <== 新增这一行，注意先后顺序不要搞错了
 
         // 执行上传或者复制
         pluginDeploy
-    ]
+    ],
+
+
 };

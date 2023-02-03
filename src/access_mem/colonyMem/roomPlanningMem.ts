@@ -4,11 +4,16 @@ export default class RoomPlanningMem {
 
     rootMem: {};
     roomName: string;
-    dpt_name: memConstant = 'roomPlanning';
+    dpt_name=  'roomPlanning';
 
     constructor(mainRoom: string) {
         this.roomName = mainRoom;
         this.rootMem = Memory['colony'][mainRoom][this.dpt_name]['model'];
+    }
+
+    addStructureInfo(structureType: string, index: number, id: string) {
+        this.rootMem[structureType][index]['id'] = id;
+
     }
 
     getStructureList(structureType: string) {
@@ -25,6 +30,14 @@ export default class RoomPlanningMem {
 
     getMineralData(): modelData {
         return Memory['colony'][this.roomName]['roomPlanning']['model']['source'][2];
+    }
+
+    getContainerSource1Data(): modelData {
+            return Memory['colony'][this.roomName]['roomPlanning']['model']['container'][1];
+    }
+
+    getContainerSource2Data(): modelData {
+            return Memory['colony'][this.roomName]['roomPlanning']['model']['container'][0];
     }
 
 

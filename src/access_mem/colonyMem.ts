@@ -1,5 +1,6 @@
 import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
 import {CreepSpawningMem} from "@/access_mem/colonyMem/creepSpawningMem";
+import {ColonyStatus} from "@/colony/colonyStatus";
 
 
 
@@ -28,27 +29,29 @@ export default class ColonyMem {
     }
 
 
+    /*************************************** COLONY STATUS ACCESS ************************************/
+    getColonyStatusMem(): ColonyStatusMemory {
+        return this.mainRoot['colonyStatus'];
+    }
+
+    saveColonyStatus(data: object) {
+        this.mainRoot['colonyStatus'] = data;
+    }
+
     /*************************************** DEPARTMENTS ACCESS *************************************/
 
     // GET ALL WORK STATION OF DPT
-    getDptWorkStationsMem(dptName: departmentName) {
+    getDptWorkStationsMem(dptName: DepartmentName) {
         return this.mainRoot[dptName];
     }
 
     // GET SPECIFIC WORK STATION
-    getWorkStationMem(dptName: departmentName, workStationId: StationType) {
+    getWorkStationMem(dptName: DepartmentName, workStationId: StationType) {
         return this.mainRoot[dptName][workStationId];
     }
 
-    addWorkStation(dptName: departmentName, workStationId: StationType, data: object): boolean {
-        /*
-        if (this.rootMem['workStation'][workStationId] == undefined) {
-            this.rootMem['workStation'][workStationId] = data;
-            return true;
-        } else {
-            return false;
-        }
-        */
+    addWorkStation(dptName: DepartmentName, workStationId: StationType, data: object): boolean {
+
         if (this.mainRoot[dptName][workStationId] == undefined) {
             this.mainRoot[dptName][workStationId] = data;
             return true;

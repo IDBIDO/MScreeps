@@ -9,16 +9,16 @@ export function iniDptHarvest(roomName: string) {
 
 
 export function iniWorkStationSource1(roomName: string) {
-    let harvesterStation = new HarvesterWorkStation(roomName);
-    harvesterStation.initializeHarvesterWorkStationAndSave('source1');
+    let harvesterStation = new HarvesterWorkStation(roomName, 'source1');
+    harvesterStation.initializeAndSave();
 }
 
 export function iniWorkStationSource2(roomName: string) {
-    let harvesterStation = new HarvesterWorkStation(roomName);
-    harvesterStation.initializeHarvesterWorkStationAndSave('source2');
+    let harvesterStation = new HarvesterWorkStation(roomName, 'source2');
+    harvesterStation.initializeAndSave();
 }
 
 export function iniMineralStation(roomName: string) {
-    let harvesterStation = new HarvesterWorkStation(roomName);
-    harvesterStation.initializeHarvesterWorkStationAndSave('mineral');
+    let harvesterStation = new HarvesterWorkStation(roomName, 'mineral');
+    harvesterStation.initializeAndSave();
 }

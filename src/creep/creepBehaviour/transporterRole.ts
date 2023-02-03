@@ -1,41 +1,88 @@
 import {LogisticWorkStation} from "@/workStation/logisticWorkStation";
+import {SendOrder} from "@/workStation/sendOrder";
+import {ColonyStatus} from "@/colony/colonyStatus";
+
 
 export function sendTaskRequest(creep: Creep) {
-    const logisticStation = new LogisticWorkStation(creep.memory['roomName'], creep.memory['workStationID']);
-    logisticStation.addAvailableCreep(creep.name);
+    const myDPT = new LogisticWorkStation(creep.memory.roomName, creep.memory.workStationID as StationType);
+    myDPT.addToAvailableCreepList(creep.name);
+}
+
+export function getFullStorageCreepForMOVE(stationDpt: string, stationId: string, roomName: string): string | null {
+    const mem = Memory['colony'][roomName][stationDpt][stationId]['creepDeadTick']
+    let maxCreepName = null;
+    let maxCreepValue = -1;
+    for (let creepName in mem) {
+        const creep = Game.creeps[creepName];
+        if (creep && creep.store.getUsedCapacity() > maxCreepValue) {
+            maxCreepName = creepName;
+            maxCreepValue = creep.store.getUsedCapacity();
+        }
+
+    }
+    return maxCreepName;
+}
+
+export function moveTaskFinished(stationDpt: string, stationId: string, roomName: string): boolean {
+    return !Memory['colony'][roomName][stationDpt][stationId]['needTransporterCreep']
+}
+
+export function getTaskData(creep: Creep): TransporterTaskData {
+
+    const logisticDpt = new LogisticWorkStation(creep.memory.roomName, creep.memory.workStationID as StationType);
+    const taskData = logisticDpt.getTaskData(creep.memory.taskData['taskType'], creep.memory.taskData['stationId']);
+    return taskData;
+}
+
+export function deleteTask(creep: Creep) {
+    const sendOrder = new SendOrder(creep.memory.roomName);
+    const orderData: TransporterTaskLocation = {
+        taskType: creep.memory.taskData['taskType'],
+        stationId: creep.memory.taskData['stationId']
+    }
+    sendOrder.logistic_sendOrder(creep.memory.workStationID as StationType, 'DELETE_TASK', orderData);
+
 }
 
 const transporterRole:{
-    [role in TransporterRoleConstant]: (data: {}) => ICreepConfig
+    [role in TransporterRole]: (data: {}) => ICreepConfig
 } = {
 
-    transporter: (data: CreepTask): ICreepConfig => ({
+    transporter: (data:  TransporterTaskLocation): ICreepConfig => ({
+
         source: (creep: Creep): boolean => {
-            if (data.taskID != null) {
+
+            if (data != null) {
                 return transferTaskOperations[data.taskType].source(creep);
             }
             else {
                 sendTaskRequest(creep);
+                console.log('send or wait task');
+                return false;
             }
 
-            return true;
+
         },
 
         target: (creep: Creep): boolean => {
-            if (data.taskID != null) {
+
+            if (data != null) {
                 return transferTaskOperations[data.taskType].target(creep);
             }
-            return true;
+            console.log('waiting for task');
+
+            return false;
         }
     })
 
 }
 
 
-export const transferTaskOperations: { [task in LogisticTaskType]: transferTaskOperation
+export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW' | 'FILL']: transferTaskOperation
 } = {
     FILL: {
         source: (creep:Creep) => {
+            /*
             const creepTask: CreepTask = creep.memory['creepTask'];
             // @ts-ignore
             const source = Game.getObjectById(creepTask.sourceInfo.id);
@@ -44,9 +91,12 @@ export const transferTaskOperations: { [task in LogisticTaskType]: transferTaskO
                 creep.moveTo(source);
             }
 
+             */
+
             return creep.store.getFreeCapacity() <= 0;
         },
         target: (creep:Creep) => {
+            /*
             const creepTask: CreepTask = creep.memory['creepTask'];
             const targetID =  creepTask.targetInfo.id;
             let target: StructureExtension
@@ -71,7 +121,7 @@ export const transferTaskOperations: { [task in LogisticTaskType]: transferTaskO
                 if (!target) {
                     // 都填满了，任务完成
 
-                    const logisticStation = new LogisticWorkStation(creep.memory['roomName'], creep.memory['workStationID']);
+                    const logisticStation = new LogisticWorkStation_old(creep.memory['roomName'], creep.memory['workStationID']);
                     logisticStation.removeTask(creepTask.taskID);
                     creepTask.taskID = null;
 
@@ -92,18 +142,51 @@ export const transferTaskOperations: { [task in LogisticTaskType]: transferTaskO
             if (creep.store[RESOURCE_ENERGY] === 0) return true
 
 
+             */
+
             return false;
         }
 
     },
     MOVE: {
         source: (creep:Creep) => {
-            creep.say('💤');
-            return false;
+            let taskLocation = creep.memory['taskData'] as TransporterTaskLocation;
+            const logisticDPT = new LogisticWorkStation(creep.memory['roomName'], creep.memory['workStationID'] as StationType);
+            const taskData = logisticDPT.getTaskData(taskLocation.taskType, taskLocation.stationId);
+
+            if (moveTaskFinished(taskData.stationDpt, taskData.stationId, creep.memory['roomName'])) {
+                //taskData = null;    // 任务完成
+                creep.memory['taskData'] = null;
+                deleteTask(creep);
+                return false;
+            }
+
+
+            else {
+                const creepName = getFullStorageCreepForMOVE(taskData.stationDpt, taskData.stationId, creep.memory['roomName']);
+                if (creepName) {
+                    const objectCreep = Game.creeps[creepName];
+                    if (!creep.pos.isNearTo(objectCreep)) {
+                        creep.moveTo(objectCreep.pos);
+                        //return false;
+                    }
+                }
+            }
+
+            //creep.say('💤');
+            return creep.store.getFreeCapacity() == 0;
         },
         target: (creep:Creep) => {
+            creep.say('💤');
+            const colonyStatus = new ColonyStatus(creep.memory['roomName']);
+            const storageID = colonyStatus.getStorageID();
+            const storage = Game.getObjectById(storageID as Id<StructureStorage> );
 
-            return false;
+            const resourceType = Object.keys(creep.store)[0] as ResourceConstant;
+            if (creep.transfer(storage, resourceType) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(storage);
+            }
+            return creep.store.getUsedCapacity() == 0;
         }
 
     },

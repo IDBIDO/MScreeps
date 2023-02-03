@@ -22,13 +22,13 @@ export function getEnergyRCL(energyAmount: number): number {
     return 8;
 }
 
-export function getBody(role: string, rcl: number, option: string): BodyPartConstant[] {
+export function getBody(role: string, rcl: number, bodyMode: string): BodyPartConstant[] {
 
     let prototype: BodyPartConstant[] = bodyPrototype[role];
 
     let act: BodyPartConstant[] = [];
 
-    if (option == 'default') {
+    if (bodyMode == 'default') {
         const componentNum = bodyComponentNumDefault[role][rcl];
 
         for (let i in prototype) {
@@ -37,7 +37,7 @@ export function getBody(role: string, rcl: number, option: string): BodyPartCons
             }
         }
     }
-    else if (option == 'manual') {
+    else if (bodyMode == 'manual') {
         const componentNumManual = bodyComponentNumManual[role][rcl];
         for (let i in prototype) {
             for (let j = 0; j < componentNumManual[i]; ++j) {
@@ -64,6 +64,7 @@ export const bodyPrototype = {
     initializer: [WORK, CARRY, MOVE],
     worker: [WORK, CARRY, MOVE],
     builder: [WORK, CARRY, MOVE],
+    supporter:[WORK, CARRY, MOVE],
     transporter: [CARRY, MOVE],
     upgrader: [WORK, CARRY, MOVE],
 }
@@ -100,6 +101,12 @@ export const bodyComponentNumDefault = {
 
     initializer: {
         1: [2, 1, 1],
+    },
+
+    builder: {
+        1: [1, 3, 1],
+        2: [1, 3, 1],
     }
+
 
 }
