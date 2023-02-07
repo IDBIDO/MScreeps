@@ -60,8 +60,10 @@ export default class ColonyMem {
 
     }
 
-
-
+    /*************************************** WITHDRAW TASK CONTROLLER *************************************/
+    getWithdrawTaskController(): WithdrawTaskInfo[] {
+        return this.mainRoot['withdrawTaskController'];
+    }
 
 
 

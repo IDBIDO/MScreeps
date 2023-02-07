@@ -15,6 +15,7 @@ export class HarvesterWorkStation extends WorkStation   {
         workPosition: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
     }
 
+
     needTransporterCreep:  boolean;
     transporterSetting:  TransporterTaskData;
 
