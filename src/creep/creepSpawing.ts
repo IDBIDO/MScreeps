@@ -49,8 +49,8 @@ export class CreepSpawning {
         const energyRCL = getEnergyRCL(Game.rooms[this.roomName].energyCapacityAvailable);
         const body = getBody(spawnTask.creepMemory.role, energyRCL, spawnTask.body);
         //console.log(spawnTask.creepMemory.role + ' ' + energyRCL + ' ' + spawnTask.body);
-        //console.log(body)
-        const creepMemory = spawnTask.creepMemory;
+        //console.log(body) JSON.parse(JSON.stringify(person))
+        const creepMemory = JSON.parse(JSON.stringify(spawnTask.creepMemory))
         const result = spawn.spawnCreep(body, creepName, { memory: creepMemory });
         return result;
     }

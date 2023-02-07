@@ -3,6 +3,7 @@ import {iniColony} from "@/init_mem/ini_index";
 import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
 import ColonyMem from "@/access_mem/colonyMem";
 import {SendOrder} from "@/workStation/sendOrder";
+import {HarvesterWorkStation} from "@/workStation/harvesterWorkStation";
 
 global.mScreeps = {
     createColony(roomName: string) : string {
@@ -50,10 +51,16 @@ global.mScreeps = {
             type: "road"
         }
         sendOrder.builder_sendOrder('internal', 'ADD_CONSTRUCTION_SITE', addConst)
-    }
+    },
+
 
     //************* DEBUG **************
 
+    // mScreeps.getFreeWorkStation('W5N8')
+    getFreeWorkStation(roomName: string) {
+      const harverstDPT = new HarvesterWorkStation(roomName, 'source1');
+        console.log(harverstDPT.getFreeWorkPosition());
+    }
 
 }
 

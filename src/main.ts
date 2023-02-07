@@ -92,8 +92,8 @@ module.exports.loop = function() {
     //console.log(Game.time%10);
     //return;
 
-    //const operationResearch = new OperationResearch('W5N8');
-    //operationResearch.run();
+    const operationResearch = new OperationResearch('W5N8');
+    operationResearch.run();
 
     testRunDPT();
 

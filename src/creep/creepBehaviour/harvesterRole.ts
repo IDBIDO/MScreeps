@@ -1,11 +1,20 @@
 import {HarvesterWorkStation} from "@/workStation/harvesterWorkStation";
 import {ColonyStatus} from "@/colony/colonyStatus";
+import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
 
-export function checkCreepTask(creep: Creep, data: HarvesterTaskData):void {
+export function checkCreepTask1(creep: Creep, data: HarvesterTaskData):void {
     if (data.workPosition == null) {
         const station = new HarvesterWorkStation(creep.memory.roomName, creep.memory.workStationID as StationType);
-        station.giveTaskTo(data);
-        console.log(data.workPosition);
+        //station.giveTaskTo(data);
+        console.log('harvester creep work position: ' + data.workPosition);
+    }
+}
+
+export function checkCreepTask(creep: Creep): void {
+    if (creep.memory.taskData['workPosition'] == null) {
+        const station = new HarvesterWorkStation(creep.memory.roomName, creep.memory.workStationID as StationType);
+        station.giveTaskTo(creep);
+       // console.log('harvester creep work position: ' + data.workPosition);
     }
 }
 
@@ -14,8 +23,7 @@ const harvesterRole:{
 } = {
     harvester: (data: HarvesterTaskData): ICreepConfig => ({
         source: (creep: Creep): boolean => {
-
-            checkCreepTask(creep, data);
+            checkCreepTask(creep);
             /*
             if (creep.harvest(Game.getObjectById(data.sourceInfo.id as Id<Source>)) === ERR_NOT_IN_RANGE) {
                 const pos = new RoomPosition(data.workPosition[0], data.workPosition[1], data.targetInfo.roomName);
@@ -39,9 +47,10 @@ const harvesterRole:{
                 const roomPos = new RoomPosition(creep.pos.x, creep.pos.y, data.sourceInfo.roomName);
                 const colonyStatus = new ColonyStatus(data.sourceInfo.roomName);
                 const fase = colonyStatus.getFase();
+                const rcl = colonyStatus.getBuildRCL();
                 // if fase 0, wait for adjacent transporter
                 let found = false;
-                if (fase == 0) {
+                if (fase == 0 && rcl == 0) {
                     const adjPos = roomPos['getAdjacentPositions']();
                     //console.log(adjPos)
                     for (let i = 0; i < adjPos.length && creep.store.getUsedCapacity(); ++i) {
@@ -52,9 +61,20 @@ const harvesterRole:{
                         if (creeps.length && creeps[0].memory.role == 'transporter') {
                             creep.transfer(creeps[0], RESOURCE_ENERGY);
                             found = true;
+                            console.log('transporter found')
 
-                            //console.log(creep.store)
-                            //console.log('transfer')
+                        }
+                    }
+                    if (!found) {
+                        // search for constructionSide
+                        const roomPlanning = new RoomPlanningMem(creep.memory.roomName);
+                        let pos: [number, number];
+                        if (creep.memory.workStationID == 'source1') pos = roomPlanning.getContainerSource1Data().pos
+                        else pos = roomPlanning.getContainerSource2Data().pos;
+                        const roomPos = new RoomPosition(pos[0], pos[1], creep.memory.roomName);
+                        const constructionSideList = roomPos.lookFor(LOOK_CONSTRUCTION_SITES);
+                        if (constructionSideList.length > 0) {
+                            creep.build(constructionSideList[0]);
                         }
                     }
                 }

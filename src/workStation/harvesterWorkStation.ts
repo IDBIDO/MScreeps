@@ -174,7 +174,7 @@ export class HarvesterWorkStation extends WorkStation   {
 
 
     /******************* ORDERS *******************/
-    protected getFreeWorkPosition(): [number, number] {
+    public getFreeWorkPosition(): [number, number] {
         let workPositionList:[number, number, number][] = this.getMemObject().taskData.workPosition;
         if (!workPositionList) {
             return null;
@@ -182,16 +182,18 @@ export class HarvesterWorkStation extends WorkStation   {
 
         //find the first free work position
         for (let workPosition of workPositionList) {
-            if (workPosition[2] == 0) {
+            if (workPosition[2] === 0) {
+                console.log('[harvesterWorkStation]: getFreeWorkPosition:' + workPosition[0] + ', ' + workPosition[1] )
                 return [workPosition[0], workPosition[1]];
             }
         }
         return null;
     }
     protected setWorkPosition(workPos: [number, number]) {
+        console.log(workPos)
         let workPositionList:[number, number, number][] = this.getMemObject().taskData.workPosition;
         for (let workPosition of workPositionList) {
-            if (workPosition[0] == workPos[0] && workPosition[1] == workPos[1]) {
+            if (workPosition[0] === workPos[0] && workPosition[1] === workPos[1]) {
                 workPosition[2] = 1;
 
             }
@@ -307,14 +309,19 @@ export class HarvesterWorkStation extends WorkStation   {
     // interface between work station and creep
 
     /******************* CREEP COMMUNICATION ***************/
-    public giveTaskTo(data: HarvesterTaskData): void {
+    public giveTaskTo(creep: Creep): void {
         const mem = this.getMemObject()
         const taskData = mem.taskData;
-        data.sourceInfo = taskData.sourceInfo;
-        data.targetInfo = taskData.targetInfo;
-        data.workPosition = this.getFreeWorkPosition();
-        console.log(data.workPosition)
-        this.setWorkPosition(data.workPosition);
+        //mem.creepConfig.creepMemory.taskData['workPosition'] = null;
+        creep.memory.taskData['sourceInfo'] = taskData.sourceInfo;
+        creep.memory.taskData['targetInfo'] = taskData.targetInfo;
+        creep.memory.taskData['workPosition'] = this.getFreeWorkPosition();
+        //data.sourceInfo = taskData.sourceInfo;
+        //data.targetInfo = taskData.targetInfo;
+        //data.workPosition = this.getFreeWorkPosition();
+        //console.log(data.workPosition)
+        if (creep.memory.taskData['workPosition']) this.setWorkPosition(creep.memory.taskData['workPosition']);
+        //mem.creepConfig.creepMemory.taskData['workPosition'] = null;
     }
 
     public updateTargetInfo(id: string, pos: [number, number]): void {
@@ -354,6 +361,11 @@ export class HarvesterWorkStation extends WorkStation   {
 
     protected maintenance(): void {
         this.renewCreeps();
+
+        const mem = this.getMemObject();
+        console.log(mem.creepConfig.creepMemory.workStationID + " " + mem.creepConfig.creepMemory.taskData['workPosition']);
+        mem.creepConfig.creepMemory.taskData['workPosition'] = null;
+
     }
 
 
