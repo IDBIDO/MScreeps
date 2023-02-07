@@ -61,7 +61,7 @@ export default class ColonyMem {
     }
 
     /*************************************** WITHDRAW TASK CONTROLLER *************************************/
-    getWithdrawTaskController(): WithdrawTaskInfo[] {
+    getWithdrawTaskController(): ID_Room_position[] {
         return this.mainRoot['withdrawTaskController'];
     }
 
