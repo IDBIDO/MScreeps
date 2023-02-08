@@ -282,6 +282,24 @@ export class LogisticWorkStation extends WorkStation {
         }
     }
 
+    /*************************** CONSULTOR ***************************************/
+
+    public exitsTask(taskType: LogisticTaskType, stationId: string): boolean {
+        const mem = this.getMemObject();
+        const taskList: {[p: string]: TransporterTaskData} = mem.taskList[taskType]
+        for (const id in taskList) {
+            if(id === stationId) return true;
+        }
+        return false;
+    }
+
+
+
+    /************************* MAINTENANCE *********************************/
+
+    private deleteCompleteTask() {
+
+    }
 
     protected maintenance(): void {
         // remove delete creep list
@@ -290,6 +308,8 @@ export class LogisticWorkStation extends WorkStation {
         this.assignTaskToAvailableCreep();
 
         this.renewCreeps();
+
+        this.deleteCompleteTask();
 
         //if (Game.time % 3 === 0) this.creepNumControl();
 

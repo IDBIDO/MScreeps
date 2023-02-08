@@ -208,6 +208,8 @@ interface HarvestStationMemory {
         targetInfo: ID_Room_position
         workPosition: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
     }
+
+
     //distanceToSpawn:  number;
     needTransporterCreep:  boolean;
     transporterSetting:  TransporterTaskData;
@@ -225,7 +227,7 @@ type HarvesterWorkStationOrder = {name: HarvesterWorkStationOrderType, data: {}}
 type LogisticWorkStationOrderType = 'ADD_CREEP' | 'DELETE_CREEP' | 'ADD_TASK' | 'DELETE_TASK';
 type LogisticWorkStationOrder = {name: LogisticWorkStationOrderType, data: {}}
 
-
+type LogisticTaskType = 'MOVE' | 'TRANSFER' | 'WITHDRAW' | 'FILL';
 interface LogisticStationMemory {
     creepDeadTick: CreepDeadTick;
     creepConfig:  CreepSpawnConfig;

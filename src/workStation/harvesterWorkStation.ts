@@ -336,36 +336,40 @@ export class HarvesterWorkStation extends WorkStation   {
 
     /******************* MAINTENANCE *******************/
 
-    /*
+    private sendWithDrawTask(container: StructureContainer):void {
+        const sendOrder = new SendOrder(this.roomName);
+        const resource = Object.keys(container.store);
+        const order: TransporterTaskData = {
+            amount: -1,
+            resourceType: undefined,
+            stationDpt: undefined,
+            stationId: "",
+            taskObjectInfo: undefined,
+            taskType: undefined,
+            transporterCreepName: ""
 
-    */
+        }
+        sendOrder.logistic_sendOrder('internal', 'ADD_TASK', order);
+    }
 
     private checkTarget(): void {
         const mem = this.getMemObject();
         const taskData = mem.taskData;
         const targetInfo = taskData.targetInfo;
-        /*
-        if (!targetInfo.id) {
-            const roomPlanningMem = new RoomPlanningMem(this.roomName);
-            let source1Data;
-            if(this.id == 'source1') {
-                source1Data = roomPlanningMem.getSource1Data();
-            } else if (this.id == 'source2') {
-                source1Data = roomPlanningMem.getSource2Data();
-            } else source1Data = roomPlanningMem.getMineralData();
-            const room = Game.rooms[this.roomName];
-            room.createConstructionSite(source1Data.pos[0], source1Data.pos[1], STRUCTURE_CONTAINER);
 
+        if (targetInfo.id) {
+            const containerOrLink = Game.getObjectById(targetInfo.id as Id<StructureContainer> | Id<StructureLink>);
+            if (containerOrLink) {
+                if (containerOrLink.structureType == 'container' ) {
+                    const usedCapacity = containerOrLink.store.getUsedCapacity();
+                    if (usedCapacity > usedCapacity/2)  this.sendWithDrawTask(containerOrLink);
+                }
+            }
         }
-         */
     }
 
     protected maintenance(): void {
         this.renewCreeps();
-
-        const mem = this.getMemObject();
-        console.log(mem.creepConfig.creepMemory.workStationID + " " + mem.creepConfig.creepMemory.taskData['workPosition']);
-        mem.creepConfig.creepMemory.taskData['workPosition'] = null;
 
     }
 
