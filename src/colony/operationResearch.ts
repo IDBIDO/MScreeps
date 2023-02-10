@@ -69,6 +69,7 @@ export class OperationResearch {
                     const containers = room.find(FIND_STRUCTURES, {
                         filter: (structure) => {return structure.structureType == STRUCTURE_CONTAINER;}
                     });
+
                     if (containers.length == 2) {
                         colonyStatus.updateFase(1);
                         colonyStatus.updateOperationResearchState(false);
@@ -92,7 +93,28 @@ export class OperationResearch {
                 break;
             case 1:
                 //1. build temporal container for store energy and spawn builders
-                
+                if (!orStatus) {
+                    const room = Game.rooms[this.roomName];
+                    const modelPlanningMem = new RoomPlanningMem(this.roomName);
+                    const storageList = modelPlanningMem.getStructureInfoList('storage');
+                    //room.createConstructionSite(storageList[0].pos[0], storageList[0].pos[1], STRUCTURE_CONTAINER);
+
+                    const sendOrder = new SendOrder(this.roomName);
+                    sendOrder.builder_sendOrder('internal', 'ADD_CREEP', null);
+                    const orderData: AddConstructionSideData = {
+                        added: false, index: 0, pos: [storageList[0].pos[0], storageList[0].pos[0]], roomName: this.roomName, type: 'storage'
+
+                    }
+                    sendOrder.builder_sendOrder('internal', 'ADD_CONSTRUCTION_SITE', orderData);
+
+                    const upgraderContainerInfo = modelPlanningMem.getContainerUpgradeData();
+                    const orderData
+                    sendOrder.builder_sendOrder('internal', 'ADD_CONSTRUCTION_SITE', )
+
+                } else {
+
+                }
+
 
                 break;
             case 2:

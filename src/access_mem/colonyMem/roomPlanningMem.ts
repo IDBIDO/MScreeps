@@ -8,7 +8,7 @@ export default class RoomPlanningMem {
 
     constructor(mainRoom: string) {
         this.roomName = mainRoom;
-        this.rootMem = Memory['colony'][mainRoom][this.dpt_name]['model'];
+        this.rootMem = Memory['colony'][mainRoom][this.dpt_name]['roomPlanning']['model'];
     }
 
     addStructureInfo(structureType: string, index: number, id: string) {
@@ -40,7 +40,17 @@ export default class RoomPlanningMem {
             return Memory['colony'][this.roomName]['roomPlanning']['model']['container'][0];
     }
 
+    getContainerUpgradeData(): modelData {
+        return this.rootMem['container'][2];
+    }
 
+    getContainerMineral(): modelData {
+        return this.rootMem['container'][3];
+    }
+
+    getStructureInfoList(structureName:  BuildableStructureConstant): modelData[] {
+        return this.rootMem[structureName]
+    }
 
 
 

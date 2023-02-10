@@ -42,10 +42,13 @@ const harvesterRole:{
 
         },
         target: (creep: Creep): boolean => {
-            if (data.targetInfo.id == null) {
-                // wait for adjacent transporte
-                const roomPos = new RoomPosition(creep.pos.x, creep.pos.y, data.sourceInfo.roomName);
-                const colonyStatus = new ColonyStatus(data.sourceInfo.roomName);
+            const harvesterWS = new HarvesterWorkStation(creep.memory.roomName, creep.memory.workStationID as StationType)
+            const targetInfo = harvesterWS.getTargetInfo();
+            const sourceInfo = harvesterWS.getSourceInfo();
+            if (targetInfo.id == null) {
+                // wait for adjacent transporter
+                const roomPos = new RoomPosition(creep.pos.x, creep.pos.y, sourceInfo.roomName);
+                const colonyStatus = new ColonyStatus(sourceInfo.roomName);
                 const fase = colonyStatus.getFase();
                 const rcl = colonyStatus.getBuildRCL();
                 // if fase 0, wait for adjacent transporter
@@ -95,11 +98,11 @@ const harvesterRole:{
             }
             else {
 
-                const target = Game.getObjectById(data.targetInfo.id as Id<Structure>);
+                const target = Game.getObjectById(targetInfo.id as Id<Structure>);
 
                 const r = creep.transfer(target, 'energy');
                 if (r == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
+                    creep.moveTo(target, {ignoreCreeps: false});
                 }
 
             }

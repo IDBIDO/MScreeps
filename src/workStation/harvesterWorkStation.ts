@@ -3,6 +3,7 @@ import {WorkStation} from "@/workStation/workStation";
 import ColonyMem from "@/access_mem/colonyMem";
 import {SendOrder} from "@/workStation/sendOrder";
 import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
+import {LogisticWorkStation} from "@/workStation/logisticWorkStation";
 
 export class HarvesterWorkStation extends WorkStation   {
 
@@ -281,6 +282,11 @@ export class HarvesterWorkStation extends WorkStation   {
         //const logisticTaskList = Memory['colony'][this.roomName]['dpt_logistic']['taskList'];
         //delete logisticTaskList['MOVE'][this.id];
     }
+    private modifyTarget(data: ID_Room_position) {
+        const mem  = this.getMemObject();
+        mem.taskData.targetInfo = data;
+    }
+
     protected executeOrder(): void {
         const mem = this.getMemObject();
         const order: HarvesterWorkStationOrder = mem['order'][0];
@@ -298,6 +304,10 @@ export class HarvesterWorkStation extends WorkStation   {
                     break;
                 case "UNSET_TRANSPORTER_CREEP":
                     this.unsetTransporterCreep();
+                    break;
+                case "MODIFY_TARGET":
+                    const data = order.data;
+                    this.modifyTarget(data as ID_Room_position);
                     break;
                 default:
                     break;
@@ -330,7 +340,16 @@ export class HarvesterWorkStation extends WorkStation   {
         const taskData = mem.taskData;
         taskData.targetInfo.id = id;
         taskData.targetInfo.pos = pos;
+    }
 
+    public getTargetInfo():ID_Room_position {
+        const mem = this.getMemObject();
+        return mem.taskData.targetInfo;
+    }
+
+    public getSourceInfo(): ID_Room_position {
+        const mem = this.getMemObject();
+        return mem.taskData.sourceInfo;
     }
 
 
@@ -362,7 +381,8 @@ export class HarvesterWorkStation extends WorkStation   {
             if (containerOrLink) {
                 if (containerOrLink.structureType == 'container' ) {
                     const usedCapacity = containerOrLink.store.getUsedCapacity();
-                    if (usedCapacity > usedCapacity/2)  this.sendWithDrawTask(containerOrLink);
+                    const logisticDPT = new LogisticWorkStation(this.roomName, 'internal');
+                    if (usedCapacity > usedCapacity/2 && logisticDPT.exitsTask('WITHDRAW', this.id))  this.sendWithDrawTask(containerOrLink);
                 }
             }
         }
@@ -370,7 +390,7 @@ export class HarvesterWorkStation extends WorkStation   {
 
     protected maintenance(): void {
         this.renewCreeps();
-
+        this.checkTarget();
     }
 
 
