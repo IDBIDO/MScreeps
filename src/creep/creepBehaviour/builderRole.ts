@@ -4,8 +4,8 @@ const builderRole:{
     [role in BuilderRole]: (data: {}) => ICreepConfig
 } = {
     builder: (data: BuilderTaskData): ICreepConfig => ({
-        source: (creep: Creep): boolean => {
 
+        source: (creep: Creep): boolean => {
             if(data.constructionSiteInfo.roomName) {
 
                 const roomPos = new RoomPosition(data.constructionSiteInfo.pos[0], data.constructionSiteInfo.pos[1], data.constructionSiteInfo.roomName);
@@ -30,6 +30,7 @@ const builderRole:{
                             data.constructionSiteInfo.pos[1] = closeConstructionSide.pos.y;
                             return false;
                         } else {
+                            // no construction side found, sleep
                             creep.say('zzz...')
                             return false;
                         }

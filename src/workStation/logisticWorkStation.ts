@@ -243,14 +243,9 @@ export class LogisticWorkStation extends WorkStation {
             const structure = Game.getObjectById(withdrawTask[taskID].taskObjectInfo.id as Id<StructureContainer>);
             //console.log(21111)
             //const resourceType = withdrawTask[taskID].resourceType;/
-            console.log(1)
-            console.log(structure.store.getUsedCapacity())
-            console.log(2)
-
-            console.log(structure.store.getCapacity())
 
             //@ts-ignore
-            const totalCapacity = _.sum(structure.store);
+            const totalCapacity = _.sum(structure.store)/5;
             if (structure.store.getUsedCapacity() > totalCapacity) {
                 const creep = Game.creeps[creepList[0]];
                 const transporterTaskLocation: TransporterTaskLocation = {
