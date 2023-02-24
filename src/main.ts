@@ -10,7 +10,7 @@ import {ColonyStatus} from "@/colony/colonyStatus";
 //import { open } from 'node:fs/promises';
 
 //import * as fileSystem from 'fs'
-import * as lodash from 'lodash';
+import _ from 'lodash';
 import {OperationResearch} from "@/colony/operationResearch";
 import {BuilderWorkStation} from "@/workStation/builderWorkStation";
 export function mount() {
@@ -97,8 +97,9 @@ module.exports.loop = function() {
 
     testRunDPT();
 
-   
-
+    //@ts-ignore
+    //const spawn = Game.getObjectById('9a493bc98e2584f')as StructureSpawn;//@ts-ignore
+    //console.log(_.sum(spawn.store))
 
     for (let creep of Object.values(Game.creeps)) {
         creep['work']();

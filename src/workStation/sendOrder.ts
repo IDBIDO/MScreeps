@@ -10,11 +10,12 @@ export class SendOrder {
     }
 
     /*************************** HARVESTER STATION ***********************************/
-    harvester_sendOrder(stationID: StationType, orderType: HarvesterWorkStationOrderType) {
+    harvester_sendOrder(stationID: StationType, orderType: HarvesterWorkStationOrderType, data?: {}) {
         const order: HarvesterWorkStationOrder = {
             name: orderType,
             data: null
         }
+        if(data) order.data = data;
         Memory['colony'][this.roomName]['dpt_harvest'][stationID]['order'].push(order);
 
         //const station = new HarvesterWorkStation(this.roomName, stationID);

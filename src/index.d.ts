@@ -202,6 +202,7 @@ interface HarvestStationMemory {
     creepDeadTick: CreepDeadTick;
     creepConfig:  CreepSpawnConfig;
 
+    resourceType: ResourceConstant;
     order: HarvesterWorkStationOrder [];
     taskData: {
         sourceInfo: ID_Room_position;

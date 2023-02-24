@@ -16,7 +16,7 @@ export class HarvesterWorkStation extends WorkStation   {
         workPosition: [number, number, number][];  // workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?
     }
 
-
+    resourceType: ResourceConstant;
     needTransporterCreep:  boolean;
     transporterSetting:  TransporterTaskData;
 
@@ -55,6 +55,7 @@ export class HarvesterWorkStation extends WorkStation   {
             creepDeadTick: this.creepDeadTick,
             creepConfig: this.creepConfig,
             taskData: this.taskData,
+            resourceType: this.resourceType,
             needTransporterCreep: this.needTransporterCreep,
             transporterSetting: this.transporterSetting
         }
@@ -150,6 +151,11 @@ export class HarvesterWorkStation extends WorkStation   {
 
         // initialize transporter setting
         this.needTransporterCreep = false;       //need transporter creep to transport energy to spawn
+
+        // initialize resource type
+        this.resourceType = 'energy';
+
+
         this.transporterSetting = {
             stationDpt: this.departmentName,
             stationId: this.id,
@@ -277,7 +283,7 @@ export class HarvesterWorkStation extends WorkStation   {
         mem.needTransporterCreep = false;
 
         const sendOrder = new SendOrder(this.roomName);
-        sendOrder.logistic_sendOrder(this.id as StationType, 'DELETE_TASK', mem.transporterSetting);
+        sendOrder.logistic_sendOrder('internal' as StationType, 'DELETE_TASK', mem.transporterSetting);
 
         //const logisticTaskList = Memory['colony'][this.roomName]['dpt_logistic']['taskList'];
         //delete logisticTaskList['MOVE'][this.id];
@@ -285,6 +291,27 @@ export class HarvesterWorkStation extends WorkStation   {
     private modifyTarget(data: ID_Room_position) {
         const mem  = this.getMemObject();
         mem.taskData.targetInfo = data;
+        const object = Game.getObjectById(data.id as Id<Structure>);
+        if (object.structureType == 'container') {
+            // add withdraw task or update it if exist
+            const sendOrder = new SendOrder(this.roomName);
+            const taskData: TransporterTaskData = {
+                amount: -1,
+                resourceType: mem.resourceType,
+                stationDpt: mem.transporterSetting.stationDpt,
+                stationId: mem.transporterSetting.stationId,
+                taskObjectInfo: data,
+                taskType: 'WITHDRAW',
+                transporterCreepName: null
+            }
+            sendOrder.logistic_sendOrder('internal', 'ADD_TASK', taskData);
+        }
+        else {
+            // delete previous withdraw task if exist
+            const sendOrder = new SendOrder(this.roomName);
+            // sendOrder.logistic_sendOrder('internal', 'DELETE_TASK', )
+        }
+
     }
 
     protected executeOrder(): void {
@@ -316,6 +343,9 @@ export class HarvesterWorkStation extends WorkStation   {
 
         }
     }
+
+
+
 
     // interface between work station and creep
 
@@ -358,14 +388,15 @@ export class HarvesterWorkStation extends WorkStation   {
     private sendWithDrawTask(container: StructureContainer):void {
         const sendOrder = new SendOrder(this.roomName);
         const resource = Object.keys(container.store);
+        const mem = this.getMemObject();
         const order: TransporterTaskData = {
             amount: -1,
-            resourceType: undefined,
-            stationDpt: undefined,
-            stationId: "",
-            taskObjectInfo: undefined,
-            taskType: undefined,
-            transporterCreepName: ""
+            resourceType: mem.resourceType,
+            stationDpt: 'dpt_harvest',
+            stationId: this.id,
+            taskObjectInfo: this.getTargetInfo(),
+            taskType: 'WITHDRAW',
+            transporterCreepName: null
 
         }
         sendOrder.logistic_sendOrder('internal', 'ADD_TASK', order);
@@ -390,7 +421,9 @@ export class HarvesterWorkStation extends WorkStation   {
 
     protected maintenance(): void {
         this.renewCreeps();
-        this.checkTarget();
+
+        // do not need to check target, logistic take care
+        //this.checkTarget();
     }
 
 

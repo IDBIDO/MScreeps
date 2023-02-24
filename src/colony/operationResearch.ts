@@ -76,15 +76,39 @@ export class OperationResearch {
                         const roomPlanningMem = new RoomPlanningMem(this.roomName);
                         const source1Data = roomPlanningMem.getSource1Data();
 
-                        const harvesterWorkStation = new HarvesterWorkStation(this.roomName, 'source1');
-                        const harvesterWorkStation2 = new HarvesterWorkStation(this.roomName, 'source2');
-                        if (containers[0].pos.x == source1Data.pos[0] && containers[0].pos.y == source1Data.pos[1]) {
-                            harvesterWorkStation.updateTargetInfo(containers[0].id, [containers[0].pos.x, containers[0].pos.y]);
-                            harvesterWorkStation2.updateTargetInfo(containers[1].id, [containers[1].pos.x, containers[1].pos.y]);
-                        } else {
-                            harvesterWorkStation.updateTargetInfo(containers[1].id, [containers[1].pos.x, containers[1].pos.y]);
-                            harvesterWorkStation2.updateTargetInfo(containers[0].id, [containers[0].pos.x, containers[0].pos.y]);
+                        //const harvesterWorkStation = new HarvesterWorkStation(this.roomName, 'source1');
+                        //const harvesterWorkStation2 = new HarvesterWorkStation(this.roomName, 'source2');
+
+                        const datac1: ID_Room_position = {
+                            id: containers[0].id,
+                            pos: [containers[0].pos.x, containers[0].pos.y],
+                            roomName: containers[0].room.name
                         }
+                        const datac2: ID_Room_position = {
+                            id: containers[1].id,
+                            pos: [containers[1].pos.x, containers[1].pos.y],
+                            roomName: containers[1].room.name
+                        }
+
+                        const sendOrder = new SendOrder(this.roomName);
+
+                        if (containers[0].pos.x == source1Data.pos[0] && containers[0].pos.y == source1Data.pos[1]) {
+                            sendOrder.harvester_sendOrder('source1', 'MODIFY_TARGET', datac1);
+                            sendOrder.harvester_sendOrder('source2', 'MODIFY_TARGET', datac2);
+
+                            //harvesterWorkStation.updateTargetInfo(containers[0].id, [containers[0].pos.x, containers[0].pos.y]);
+                            //harvesterWorkStation2.updateTargetInfo(containers[1].id, [containers[1].pos.x, containers[1].pos.y]);
+
+                        } else {
+                            sendOrder.harvester_sendOrder('source1', 'MODIFY_TARGET', datac2);
+                            sendOrder.harvester_sendOrder('source2', 'MODIFY_TARGET', datac1);
+                            //harvesterWorkStation.updateTargetInfo(containers[1].id, [containers[1].pos.x, containers[1].pos.y]);
+                            //harvesterWorkStation2.updateTargetInfo(containers[0].id, [containers[0].pos.x, containers[0].pos.y]);
+                        }
+                        sendOrder.harvester_sendOrder('source1', 'UNSET_TRANSPORTER_CREEP');
+
+                        //sendOrder.harvester_sendOrder('source1', 'MODIFY_TARGET', )
+                        //sendOrder.harvester_sendOrder('source2', 'MODIFY_TARGET')
 
 
                     }
@@ -94,6 +118,7 @@ export class OperationResearch {
             case 1:
                 //1. build temporal container for store energy and spawn builders
                 if (!orStatus) {
+                    console.log(11111)
                     const room = Game.rooms[this.roomName];
                     const modelPlanningMem = new RoomPlanningMem(this.roomName);
                     const storageList = modelPlanningMem.getStructureInfoList('storage');
@@ -102,15 +127,21 @@ export class OperationResearch {
                     const sendOrder = new SendOrder(this.roomName);
                     sendOrder.builder_sendOrder('internal', 'ADD_CREEP', null);
                     const orderData: AddConstructionSideData = {
-                        added: false, index: 0, pos: [storageList[0].pos[0], storageList[0].pos[0]], roomName: this.roomName, type: 'storage'
+                        added: false, index: 0, pos: [storageList[0].pos[0], storageList[0].pos[1]], roomName: this.roomName, type: 'container'
 
                     }
                     sendOrder.builder_sendOrder('internal', 'ADD_CONSTRUCTION_SITE', orderData);
 
                     const upgraderContainerInfo = modelPlanningMem.getContainerUpgradeData();
-                    const orderData
-                    sendOrder.builder_sendOrder('internal', 'ADD_CONSTRUCTION_SITE', )
+                    const orderConst: AddConstructionSideData = {
+                        added: false, index: 2, pos: [upgraderContainerInfo.pos[0], upgraderContainerInfo.pos[1]], roomName: this.roomName, type: "container"
 
+                    }
+                    sendOrder.builder_sendOrder('internal', 'ADD_CONSTRUCTION_SITE', orderConst);
+                    const colonyStatus = new ColonyStatus(this.roomName);
+                    colonyStatus.updateOperationResearchState(true);
+
+                    sendOrder.logistic_sendOrder('internal', 'ADD_CREEP', null);
                 } else {
 
                 }

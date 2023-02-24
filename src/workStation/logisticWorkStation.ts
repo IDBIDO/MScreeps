@@ -1,6 +1,6 @@
 import {WorkStation} from "@/workStation/workStation";
 import ColonyMem from "@/access_mem/colonyMem";
-
+import _ from 'lodash';
 export class LogisticWorkStation extends WorkStation {
 
     order:  LogisticWorkStationOrder [];
@@ -186,6 +186,9 @@ export class LogisticWorkStation extends WorkStation {
 
     }
 
+
+
+
     private getAvailableTask(taskList: {[p: string]: TransporterTaskData}): string {
         for (let taskID in taskList) {
             const task = taskList[taskID];
@@ -193,7 +196,8 @@ export class LogisticWorkStation extends WorkStation {
         }
         return null;
     }
-    private assignTaskToAvailableCreep() {
+
+    private assignFILLTask() {
         const mem = this.getMemObject();
         const creepList = mem.availableCreepList;
 
@@ -212,29 +216,67 @@ export class LogisticWorkStation extends WorkStation {
                 mem.fillTask--;
             }
         }
+    }
 
+    private checkWITHDRAWTaskInProcess(): number {
+        const mem = this.getMemObject();
+        const withdrawTask = mem.taskList.WITHDRAW;
+        let count = 0;
+        for (const i in withdrawTask) {
+            if (withdrawTask[i].transporterCreepName) ++count;
+        }
+        return count;
+    }
+    private assignWITHDRAWTask() {
+        if (Game.time % 3 != 0) return;
+
+        //if (this.checkWITHDRAWTaskInProcess() > 0) return;
+        const mem = this.getMemObject();
+        const creepList = mem.availableCreepList;
         //2. assign WITHDRAW task
         const withdrawTask = mem.taskList.WITHDRAW;
         //const withDrawTakIDList = Object.keys(withdrawTask)
 
         let taskID = this.getAvailableTask(withdrawTask);
+        // hay creeps disponibles y tareas disponibles
         while (creepList.length > 0 && taskID != null) {
-            const creep = Game.creeps[creepList[0]];
-            const transporterTaskLocation: TransporterTaskLocation = {
-                'taskType': 'WITHDRAW',
-                'stationId': taskID,
-            }
-            creep.memory['taskData'] = transporterTaskLocation;
+            const structure = Game.getObjectById(withdrawTask[taskID].taskObjectInfo.id as Id<StructureContainer>);
+            //console.log(21111)
+            //const resourceType = withdrawTask[taskID].resourceType;/
+            console.log(1)
+            console.log(structure.store.getUsedCapacity())
+            console.log(2)
 
-            creepList.splice(0, 1);
-            withdrawTask[taskID].transporterCreepName = creep.name;
-            taskID = this.getAvailableTask(withdrawTask);
+            console.log(structure.store.getCapacity())
+
+            //@ts-ignore
+            const totalCapacity = _.sum(structure.store);
+            if (structure.store.getUsedCapacity() > totalCapacity) {
+                const creep = Game.creeps[creepList[0]];
+                const transporterTaskLocation: TransporterTaskLocation = {
+                    'taskType': 'WITHDRAW',
+                    'stationId': taskID,
+                }
+                creep.memory['taskData'] = transporterTaskLocation;
+
+                creepList.splice(0, 1);
+                withdrawTask[taskID].transporterCreepName = creep.name;
+                taskID = this.getAvailableTask(withdrawTask);
+            }
+
+
         }
+    }
+
+    private assignTRANSFERTask() {
+        const mem = this.getMemObject();
+        const creepList = mem.availableCreepList;
+
 
         //3. assign TRANSFER task
         const transferTask = mem.taskList.TRANSFER;
         //const transferTakIDList = Object.keys(transferTask)
-        taskID = this.getAvailableTask(transferTask);
+        let taskID = this.getAvailableTask(transferTask);
         while (creepList.length > 0 && taskID != null) {
             const creep = Game.creeps[creepList[0]];
             const transporterTaskLocation: TransporterTaskLocation = {
@@ -247,11 +289,15 @@ export class LogisticWorkStation extends WorkStation {
             transferTask[taskID].transporterCreepName = creep.name;
             taskID = this.getAvailableTask(transferTask);
         }
+    }
 
+    private assignMOVETask() {
+        const mem = this.getMemObject();
+        const creepList = mem.availableCreepList;
         //4. assign MOVE task
         const moveTask = mem.taskList.MOVE;
         //const moveTakIDList = Object.keys(moveTask)
-        taskID = this.getAvailableTask(moveTask);
+        let taskID = this.getAvailableTask(moveTask);
         while (creepList.length > 0 && taskID != null) {
             const creep = Game.creeps[creepList[0]];
             const transporterTaskLocation: TransporterTaskLocation = {
@@ -264,12 +310,23 @@ export class LogisticWorkStation extends WorkStation {
             moveTask[taskID].transporterCreepName = creep.name;
             taskID = this.getAvailableTask(moveTask);
         }
+    }
+
+
+    private assignTaskToAvailableCreep() {
+        this.assignFILLTask();
+        this.assignWITHDRAWTask();
+        this.assignTRANSFERTask();
+
+        this.assignMOVETask();
 
     }
 
     public getTaskData(taskType: string, taskID: string): TransporterTaskData {
         const mem = this.getMemObject();
-        return mem.taskList[taskType][taskID];
+
+        if (mem.taskList[taskType][taskID]) return mem.taskList[taskType][taskID];
+        return null;        // task no exist, task deleted
     }
 
     /****************** CREEPS NUM CONTROL ******************/
@@ -297,19 +354,50 @@ export class LogisticWorkStation extends WorkStation {
 
     /************************* MAINTENANCE *********************************/
 
-    private deleteCompleteTask() {
+    private deleteMOVETask() {
+        const mem = this.getMemObject();
+        const moveTaskList = mem.taskList.MOVE;
+        for (const task in moveTaskList) {
+            const data = moveTaskList[task];
+            const stationDpt = data.stationDpt;
+            const stationId = data.stationId;
+            if (!Memory['colony'][this.roomName][stationDpt][stationId]['needTransporterCreep']) {
+                delete moveTaskList[task]
+            }
 
+        }
+    }
+
+    private deleteWITHDRAWTask() {
+        const mem = this.getMemObject();
+        const withDrawList = mem.taskList.MOVE;
+        for (const task in withDrawList) {
+            const data = withDrawList[task];
+            // TO COMPLETE
+        }
+    }
+
+    private deleteTRANSFERTask() {
+
+    }
+
+    private deleteCompleteTask() {
+        this.deleteMOVETask();
+        this.deleteWITHDRAWTask();
+        this.deleteTRANSFERTask();
     }
 
     protected maintenance(): void {
         // remove delete creep list
+        this.deleteCompleteTask();
+
         this.removeDeleteCreep();
 
         this.assignTaskToAvailableCreep();
 
         this.renewCreeps();
 
-        this.deleteCompleteTask();
+
 
         //if (Game.time % 3 === 0) this.creepNumControl();
 

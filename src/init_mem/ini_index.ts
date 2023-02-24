@@ -6,6 +6,9 @@ import {iniColonyStatus} from "@/init_mem/iniColonyStatus";
 import {iniDptBuild} from "@/init_mem/iniDptBuild";
 
 export function iniColony(roomName: string) {
+    if (!Memory['colony']) Memory['colony'] = {};
+
+
     iniColonyStatus(roomName);
     iniRoomPlanning(roomName);
     iniCreepSpawning(roomName);

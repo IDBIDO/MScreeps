@@ -8,7 +8,7 @@ export default class RoomPlanningMem {
 
     constructor(mainRoom: string) {
         this.roomName = mainRoom;
-        this.rootMem = Memory['colony'][mainRoom][this.dpt_name]['roomPlanning']['model'];
+        this.rootMem = Memory['colony'][mainRoom][this.dpt_name]['model'];
     }
 
     addStructureInfo(structureType: string, index: number, id: string) {
