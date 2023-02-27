@@ -1,4 +1,6 @@
+import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
 import { getEnergyRCL } from "@/creep/creepBody";
+import { SendOrder } from "@/workStation/sendOrder";
 
 export abstract class StationORModel {
 
@@ -15,14 +17,28 @@ export abstract class StationORModel {
         return energyRCL;
     }
 
+    public createConstructionSite(structureType: BuildableStructureConstant, pos:[number, number], roomName: string, index: number): ScreepsReturnCode {
+        const sendOrder = new SendOrder('W5N8');
+        // check if construction site already exist
+        const constructionSites = Game.rooms[roomName].lookForAtArea(LOOK_CONSTRUCTION_SITES, pos[1], pos[0], pos[1], pos[0], true);
+        if (constructionSites.length > 0) return ERR_INVALID_TARGET;
+
+        const orderData: AddConstructionSideData = {
+            added: false, index: index, pos: pos, roomName: roomName, type: structureType
+        }
+        sendOrder.builder_sendOrder('internal', 'ADD_CONSTRUCTION_SITE', orderData);
+        return OK;
+
+    }
+
     protected abstract creepNumController();
 
     protected abstract structureController();
 
     run() {
 
-        this.creepNumController();
-        this.structureController();
+    this.creepNumController();
+    this.structureController();
     }
 
 
