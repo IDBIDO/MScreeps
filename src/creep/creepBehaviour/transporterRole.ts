@@ -61,9 +61,9 @@ const transporterRole:{
 
         source: (creep: Creep): boolean => {
             // check check live time
-            if (creep.ticksToLive < 3) deadOperation(creep);
+            if (creep.ticksToLive < 30) deadOperation(creep);
 
-            if (data != null) {
+            if (data && data.taskType) {
                 return transferTaskOperations[data.taskType].source(creep);
             }
             else {
@@ -170,7 +170,9 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
 
             if (!taskData) {
                 //taskData = null;    // 任务完成
-                creep.memory['taskData'] = null;
+                //creep.memory['taskData'] = null;
+                creep.memory.taskData['taskType'] = null;
+                creep.memory.taskData['stationId'] = null;
                 //deleteTask(creep);
                 return false;
             }
@@ -228,9 +230,16 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
             const targetStructure = Game.getObjectById(taskData.taskObjectInfo.id as Id<StructureStorage>);
 
             const r = creep.transfer(targetStructure, taskData.resourceType);
-            if (r == ERR_NOT_IN_RANGE) creep.moveTo(targetStructure);
+            if (r == ERR_NOT_IN_RANGE) {creep.moveTo(targetStructure); return false}
+            else {
+                taskData.amount -= creep.store.getUsedCapacity(taskData.resourceType);
+                creep.memory.taskData['taskType'] = null;
+                creep.memory.taskData['stationId'] = null;
+                return true;
 
-            return creep.store.getUsedCapacity() == 0;
+            }
+
+            //return creep.store.getUsedCapacity() == 0;
         }
 
     },
@@ -253,6 +262,11 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
             if (structure) {
                 const r = creep.withdraw(structure, taskData.resourceType);
                 if (r == ERR_NOT_IN_RANGE) creep.moveTo(structure);
+                else if (r == OK) {
+                    // if withdraw success, realise the task
+                    taskData.transporterCreepName = null;       //avise logisticDPT that the task is done
+
+                }
             }
 
             return creep.store.getFreeCapacity() <= 0;
@@ -269,9 +283,16 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
             if (creepResources) {
                 const r = creep.transfer(storage, creepResources as ResourceConstant);
                 if (r == ERR_NOT_IN_RANGE) {creep.moveTo(storage); return false; }
+                if(r == OK) {
+                    creep.memory.taskData['taskType'] = null;
+                    creep.memory.taskData['stationId'] = null;
+                }
                 return true;
             }
-            //return false;
+            // creep storage empty,
+            creep.memory.taskData['taskType'] = null;
+            creep.memory.taskData['stationId'] = null;
+            return true;
 
         }
 

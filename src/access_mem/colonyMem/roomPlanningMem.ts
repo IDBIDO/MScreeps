@@ -12,8 +12,9 @@ export default class RoomPlanningMem {
     }
 
     addStructureInfo(structureType: string, index: number, id: string) {
-        this.rootMem[structureType][index]['id'] = id;
-
+        if (index >= 0) {
+            this.rootMem[structureType][index]['id'] = id;
+        }
     }
 
     getStructureList(structureType: string) {

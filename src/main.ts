@@ -13,6 +13,8 @@ import {ColonyStatus} from "@/colony/colonyStatus";
 import _ from 'lodash';
 import {OperationResearch} from "@/colony/operationResearch";
 import {BuilderWorkStation} from "@/workStation/builderWorkStation";
+import { SendOrder } from "./workStation/sendOrder";
+import RoomPlanningMem from "./access_mem/colonyMem/roomPlanningMem";
 export function mount() {
     mScreeps.nothing();     //api
     SuperMove.nothing();    //move module
@@ -90,12 +92,40 @@ module.exports.loop = function() {
 
     mount();
     //console.log(Game.time%10);
+    //console.log(Game.cpu.bucket);
+
+    //const container = Game.getObjectById('93fc539e23fc4b2' as Id<StructureContainer>)
+    //console.log(container?.store.getUsedCapacity(RESOURCE_ENERGY));
+    //console.log(container?.store.getFreeCapacity() + container?.store.getUsedCapacity());
+    //console.log(container?.store.getCapacity());
+
     //return;
 
     const operationResearch = new OperationResearch('W5N8');
     operationResearch.run();
 
     testRunDPT();
+
+    //console.log(Game.time%10);
+
+
+
+    if (Game.time%10 == 10) {
+        const sendOrder = new SendOrder('W5N8');
+        sendOrder.logistic_sendOrder('internal', 'ADD_CREEP', null);
+        /*
+        const modelPlanningMem = new RoomPlanningMem('W5N8');
+        const storageList = modelPlanningMem.getStructureInfoList('road');
+        const orderData: AddConstructionSideData = {
+            added: false, index: 0, pos: [storageList[0].pos[0], storageList[0].pos[1]], roomName: 'W5N8', type: 'road'
+
+        }
+        sendOrder.builder_sendOrder('internal', 'ADD_CONSTRUCTION_SITE', orderData);
+
+         */
+
+    }
+
 
     //@ts-ignore
     //const spawn = Game.getObjectById('9a493bc98e2584f')as StructureSpawn;//@ts-ignore

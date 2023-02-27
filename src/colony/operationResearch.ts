@@ -118,17 +118,17 @@ export class OperationResearch {
             case 1:
                 //1. build temporal container for store energy and spawn builders
                 if (!orStatus) {
-                    console.log(11111)
+                    //console.log(11111)
                     const room = Game.rooms[this.roomName];
                     const modelPlanningMem = new RoomPlanningMem(this.roomName);
                     const storageList = modelPlanningMem.getStructureInfoList('storage');
                     //room.createConstructionSite(storageList[0].pos[0], storageList[0].pos[1], STRUCTURE_CONTAINER);
 
                     const sendOrder = new SendOrder(this.roomName);
+                    sendOrder.logistic_sendOrder('internal', 'ADD_CREEP', null);
                     sendOrder.builder_sendOrder('internal', 'ADD_CREEP', null);
                     const orderData: AddConstructionSideData = {
                         added: false, index: 0, pos: [storageList[0].pos[0], storageList[0].pos[1]], roomName: this.roomName, type: 'container'
-
                     }
                     sendOrder.builder_sendOrder('internal', 'ADD_CONSTRUCTION_SITE', orderData);
 
@@ -141,7 +141,9 @@ export class OperationResearch {
                     const colonyStatus = new ColonyStatus(this.roomName);
                     colonyStatus.updateOperationResearchState(true);
 
-                    sendOrder.logistic_sendOrder('internal', 'ADD_CREEP', null);
+
+
+
                 } else {
 
                 }

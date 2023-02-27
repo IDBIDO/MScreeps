@@ -1,6 +1,7 @@
 import {HarvesterWorkStation} from "@/workStation/harvesterWorkStation";
 import {ColonyStatus} from "@/colony/colonyStatus";
 import RoomPlanningMem from "@/access_mem/colonyMem/roomPlanningMem";
+import { SendOrder } from "@/workStation/sendOrder";
 
 export function checkCreepTask1(creep: Creep, data: HarvesterTaskData):void {
     if (data.workPosition == null) {
@@ -18,19 +19,23 @@ export function checkCreepTask(creep: Creep): void {
     }
 }
 
+export function creepDeadAction(creep: Creep): void {
+    if (creep.ticksToLive < 5) {
+        const sendOrder = new SendOrder(creep.memory.roomName);
+        sendOrder.harvester_sendOrder(creep.memory.workStationID as StationType,
+            'UNSET_WORK_POSITION', {workPosition: creep.memory.taskData['workPosition']} );
+        creep.suicide();
+    }
+}
+
 const harvesterRole:{
     [role in HarvesterRole]: (data: {}) => ICreepConfig
 } = {
     harvester: (data: HarvesterTaskData): ICreepConfig => ({
         source: (creep: Creep): boolean => {
             checkCreepTask(creep);
-            /*
-            if (creep.harvest(Game.getObjectById(data.sourceInfo.id as Id<Source>)) === ERR_NOT_IN_RANGE) {
-                const pos = new RoomPosition(data.workPosition[0], data.workPosition[1], data.targetInfo.roomName);
-                //console.log(pos)
-                creep.moveTo(pos);
-            }
-            */
+
+            creepDeadAction(creep);
 
             const pos = new RoomPosition(data.workPosition[0], data.workPosition[1], data.targetInfo.roomName);
             if (creep.pos.isEqualTo(pos)) {
@@ -42,6 +47,8 @@ const harvesterRole:{
 
         },
         target: (creep: Creep): boolean => {
+            creepDeadAction(creep);
+
             const harvesterWS = new HarvesterWorkStation(creep.memory.roomName, creep.memory.workStationID as StationType)
             const targetInfo = harvesterWS.getTargetInfo();
             const sourceInfo = harvesterWS.getSourceInfo();
@@ -64,7 +71,7 @@ const harvesterRole:{
                         if (creeps.length && creeps[0].memory.role == 'transporter') {
                             creep.transfer(creeps[0], RESOURCE_ENERGY);
                             found = true;
-                            console.log('transporter found')
+                            //console.log('transporter found')
 
                         }
                     }

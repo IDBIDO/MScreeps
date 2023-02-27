@@ -7,6 +7,7 @@ import {LogisticWorkStation} from "@/workStation/logisticWorkStation";
 
 export class HarvesterWorkStation extends WorkStation   {
 
+
     /******************* MUTATOR *******************/
 
     order: HarvesterWorkStationOrder[]
@@ -336,6 +337,10 @@ export class HarvesterWorkStation extends WorkStation   {
                     const data = order.data;
                     this.modifyTarget(data as ID_Room_position);
                     break;
+                case "UNSET_WORK_POSITION":
+                    const workPos = order.data['workPosition'];
+                    this.unSetWorkPosition(workPos as [number, number]);
+                    break;
                 default:
                     break;
             }
@@ -372,15 +377,6 @@ export class HarvesterWorkStation extends WorkStation   {
         taskData.targetInfo.pos = pos;
     }
 
-    public getTargetInfo():ID_Room_position {
-        const mem = this.getMemObject();
-        return mem.taskData.targetInfo;
-    }
-
-    public getSourceInfo(): ID_Room_position {
-        const mem = this.getMemObject();
-        return mem.taskData.sourceInfo;
-    }
 
 
     /******************* MAINTENANCE *******************/
@@ -426,5 +422,26 @@ export class HarvesterWorkStation extends WorkStation   {
         //this.checkTarget();
     }
 
+    /******************* CONSULTOR *******************/
+    public getTargetInfo(): ID_Room_position {
+        const mem = this.getMemObject();
+        return mem.taskData.targetInfo;
+    }
+
+    public getSourceInfo(): ID_Room_position {
+        const mem = this.getMemObject();
+        return mem.taskData.sourceInfo;
+    }
+    public getContainerPos(): [number, number] {
+        const roomPlanningMem = new RoomPlanningMem(this.roomName);
+        if (this.id == 'source1') {
+            return roomPlanningMem.getContainerSource1Data().pos;
+        } else if (this.id == 'source2') {
+            return roomPlanningMem.getContainerSource2Data().pos;
+        }
+        else if (this.id == 'mineral') {
+            return roomPlanningMem.getMineralData().pos;
+        }
+    }
 
 }

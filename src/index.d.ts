@@ -217,7 +217,8 @@ interface HarvestStationMemory {
 }
 
 // ORDER
-type HarvesterWorkStationOrderType = 'DELETE_CREEP' | 'ADD_CREEP' | 'SET_TRANSPORTER_CREEP' | 'UNSET_TRANSPORTER_CREEP'| 'MODIFY_TARGET'
+type HarvesterWorkStationOrderType = 'DELETE_CREEP' | 'ADD_CREEP' | 'SET_TRANSPORTER_CREEP' | 'UNSET_TRANSPORTER_CREEP'| 'MODIFY_TARGET' |
+    'UNSET_WORK_POSITION';
 type HarvesterWorkStationOrder = {name: HarvesterWorkStationOrderType, data: {}}
 
 

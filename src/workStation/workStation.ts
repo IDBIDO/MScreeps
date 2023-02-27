@@ -55,4 +55,11 @@ export abstract class WorkStation {
         }
     }
 
+    /***************** CONSULTOR *****************/
+    // getCreepNum
+    public getCreepNum(): number {
+        let mem = this.getMemObject();
+        return Object.keys(mem.creepDeadTick).length;
+    }
+
 }

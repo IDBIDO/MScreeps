@@ -1,6 +1,7 @@
 import {WorkStation} from "@/workStation/workStation";
 import ColonyMem from "@/access_mem/colonyMem";
 import _ from 'lodash';
+import { ColonyStatus } from "@/colony/colonyStatus";
 export class LogisticWorkStation extends WorkStation {
 
     order:  LogisticWorkStationOrder [];
@@ -186,15 +187,15 @@ export class LogisticWorkStation extends WorkStation {
 
     }
 
-
-
-
-    private getAvailableTask(taskList: {[p: string]: TransporterTaskData}): string {
+    private getAvailableTask(taskList: {[p: string]: TransporterTaskData}): string[] {
+        let availableTaskList = [];
         for (let taskID in taskList) {
             const task = taskList[taskID];
-            if (task.transporterCreepName == null) return taskID;
+            if (task.transporterCreepName == null) {
+                availableTaskList.push(taskID);
+            }
         }
-        return null;
+        return availableTaskList;
     }
 
     private assignFILLTask() {
@@ -227,63 +228,95 @@ export class LogisticWorkStation extends WorkStation {
         }
         return count;
     }
+
+    private storageFreeCapacityPerCentage(): number {
+        const colonyStatus = new ColonyStatus(this.roomName);
+        const storageID = colonyStatus.getStorageID();
+        const storage = Game.getObjectById(storageID as Id<StructureStorage>);
+        if (storage) {
+            const freeCapacity = storage.store.getFreeCapacity();
+            const totalCapacity = storage.store.getCapacity();
+            const percentage = freeCapacity / totalCapacity;
+            return percentage;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    private storageCapacity(): number {
+        const colonyStatus = new ColonyStatus(this.roomName);
+        const storageID = colonyStatus.getStorageID();
+        const storage = Game.getObjectById(storageID as Id<StructureStorage>);
+        if (storage) {
+            const totalCapacity = storage.store.getCapacity();
+            return totalCapacity;
+        }
+        else {
+            return 0;
+        }
+    }
+
     private assignWITHDRAWTask() {
         if (Game.time % 3 != 0) return;
-
-        //if (this.checkWITHDRAWTaskInProcess() > 0) return;
+        if (this.storageFreeCapacityPerCentage() > 0.9 && this.storageCapacity() > 1000) return;
+        if (this.checkWITHDRAWTaskInProcess() > 0) return;
         const mem = this.getMemObject();
         const creepList = mem.availableCreepList;
         //2. assign WITHDRAW task
         const withdrawTask = mem.taskList.WITHDRAW;
         //const withDrawTakIDList = Object.keys(withdrawTask)
 
-        let taskID = this.getAvailableTask(withdrawTask);
-        // hay creeps disponibles y tareas disponibles
-        while (creepList.length > 0 && taskID != null) {
-            const structure = Game.getObjectById(withdrawTask[taskID].taskObjectInfo.id as Id<StructureContainer>);
-            //console.log(21111)
-            //const resourceType = withdrawTask[taskID].resourceType;/
+        if (creepList.length > 0) {
+            const taskList = this.getAvailableTask(withdrawTask);
+            // hay creeps disponibles y tareas disponibles
+            for (const taskID of taskList) {
+                const structure = Game.getObjectById(withdrawTask[taskID].taskObjectInfo.id as Id<StructureContainer>);
+                const totalCapacity = structure?.store.getCapacity();//_.sum(structure.store) + structure.store.getFreeCapacity();
 
-            //@ts-ignore
-            const totalCapacity = _.sum(structure.store)/5;
-            if (structure.store.getUsedCapacity() > totalCapacity) {
+                //console.log(structure);
+                if (structure?.store.getUsedCapacity() > totalCapacity/2) {
+                    const creep = Game.creeps[creepList[0]];
+                    const transporterTaskLocation: TransporterTaskLocation = {
+                        'taskType': 'WITHDRAW',
+                        'stationId': taskID,
+                    }
+                    creep.memory['taskData'] = transporterTaskLocation;
+
+                    creepList.splice(0, 1);
+                    withdrawTask[taskID].transporterCreepName = creep.name;
+                }
+            }
+        }
+
+    }
+
+    private assignTRANSFERTask() {
+
+        const mem = this.getMemObject();
+        const creepList = mem.availableCreepList;
+        if (this.storageFreeCapacityPerCentage() < 0.3) return;
+
+        //3. assign TRANSFER task
+        const transferTask = mem.taskList.TRANSFER;
+        //const transferTakIDList = Object.keys(transferTask)
+
+        if (creepList.length > 0) {
+            const taskList = this.getAvailableTask(transferTask);
+            // hay creeps disponibles y tareas disponibles
+            for (const taskID of taskList) {
                 const creep = Game.creeps[creepList[0]];
                 const transporterTaskLocation: TransporterTaskLocation = {
-                    'taskType': 'WITHDRAW',
+                    'taskType': 'TRANSFER',
                     'stationId': taskID,
                 }
                 creep.memory['taskData'] = transporterTaskLocation;
 
                 creepList.splice(0, 1);
-                withdrawTask[taskID].transporterCreepName = creep.name;
-                taskID = this.getAvailableTask(withdrawTask);
+                transferTask[taskID].transporterCreepName = creep.name;
             }
-
-
         }
-    }
 
-    private assignTRANSFERTask() {
-        const mem = this.getMemObject();
-        const creepList = mem.availableCreepList;
-
-
-        //3. assign TRANSFER task
-        const transferTask = mem.taskList.TRANSFER;
-        //const transferTakIDList = Object.keys(transferTask)
-        let taskID = this.getAvailableTask(transferTask);
-        while (creepList.length > 0 && taskID != null) {
-            const creep = Game.creeps[creepList[0]];
-            const transporterTaskLocation: TransporterTaskLocation = {
-                'taskType': 'TRANSFER',
-                'stationId': taskID,
-            }
-            creep.memory['taskData'] = transporterTaskLocation;
-
-            creepList.splice(0, 1);
-            transferTask[taskID].transporterCreepName = creep.name;
-            taskID = this.getAvailableTask(transferTask);
-        }
     }
 
     private assignMOVETask() {
@@ -292,18 +325,21 @@ export class LogisticWorkStation extends WorkStation {
         //4. assign MOVE task
         const moveTask = mem.taskList.MOVE;
         //const moveTakIDList = Object.keys(moveTask)
-        let taskID = this.getAvailableTask(moveTask);
-        while (creepList.length > 0 && taskID != null) {
-            const creep = Game.creeps[creepList[0]];
-            const transporterTaskLocation: TransporterTaskLocation = {
-                'taskType': 'MOVE',
-                'stationId': taskID,
-            }
-            creep.memory['taskData'] = transporterTaskLocation;
 
-            creepList.splice(0, 1);
-            moveTask[taskID].transporterCreepName = creep.name;
-            taskID = this.getAvailableTask(moveTask);
+        if (creepList.length > 0) {
+            const taskList = this.getAvailableTask(moveTask);
+            // hay creeps disponibles y tareas disponibles
+            for (const taskID of taskList) {
+                const creep = Game.creeps[creepList[0]];
+                const transporterTaskLocation: TransporterTaskLocation = {
+                    'taskType': 'MOVE',
+                    'stationId': taskID,
+                }
+                creep.memory['taskData'] = transporterTaskLocation;
+
+                creepList.splice(0, 1);
+                moveTask[taskID].transporterCreepName = creep.name;
+            }
         }
     }
 
@@ -373,7 +409,17 @@ export class LogisticWorkStation extends WorkStation {
     }
 
     private deleteTRANSFERTask() {
-
+        const mem = this.getMemObject();
+        const transferList = mem.taskList.TRANSFER;
+        for (const task in transferList) {
+            const data = transferList[task];
+            const object = Game.getObjectById(data.taskObjectInfo.id as Id<Structure>);
+            if (object == null) {
+                delete transferList[task];
+            } else {
+                data.amount <= 0 ? delete transferList[task] : null;
+            }
+        }
     }
 
     private deleteCompleteTask() {

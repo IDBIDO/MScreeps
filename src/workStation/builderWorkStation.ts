@@ -158,7 +158,10 @@ export class BuilderWorkStation extends WorkStation {
         const mem = this.getMemObject();
         const addConstructionSide = mem.addConstructionSiteList;
         for (let construction of addConstructionSide) {
+            // pop
+            //addConstructionSide.shift();
             if (!construction.added) {
+
                 const roomPos = new RoomPosition(construction.pos[0], construction.pos[1], construction.roomName);
                 const rValue = roomPos.createConstructionSite(construction.type as BuildableStructureConstant);
                 if (rValue == 0) construction.added = true;
@@ -182,7 +185,10 @@ export class BuilderWorkStation extends WorkStation {
                         type: construction.type,
                     }
                     checkConstructionSideList.push(checkConstructionSide);
+                    // print checkConstructionSide atributes
+                    //console.log('checkConstructionSide: ' + JSON.stringify(checkConstructionSide));
                 }
+
                 const index = addConstructionSide.indexOf(construction);
                 if (index > -1) { // only splice array when item is found
                     addConstructionSide.splice(index, 1); // 2nd parameter means remove one item only
