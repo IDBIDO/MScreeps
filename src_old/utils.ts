@@ -1,43 +1,5 @@
 
-export const energyAvailable = [300, 550, 800, 1300, 1800, 2300, 5600, 10000]
-export function getEnergyRCL(energyAmount: number): number {
 
-    /*
-    let found = false;
-    let i = 0;
-    while( !found && i < 8) {
-        if (energyAvailable[i] > energyAmount) return i;
-        ++i;
-    }
-    return -1;
-    */
-    let found = false;
-    let i = 0;
-    while (!found && i < 8) {
-        if (energyAvailable[i] > energyAmount) return i;
-        ++i;
-    }
-    return 8;
-}
-
-export function countStructure(room: string, structureType: StructureConstant): number {
-    return Game.rooms[room].find(FIND_STRUCTURES, {
-        filter: (structure) => {
-            return structure.structureType === structureType;
-        }
-    }).length;
-}
-
-// Function to create an object with all properties set to null
-export function createNullObject<T extends Record<string, any>>(type: T): T {
-    const nullObject: T = {} as T;
-    for (const key in type) {
-        if (type.hasOwnProperty(key)) {
-            nullObject[key] = null;
-        }
-    }
-    return nullObject;
-}
 /**
   * 把 obj2 的原型合并到 obj1 的原型上
   * 如果原型的键以 Getter 结尾，则将会把其挂载为 getter 属性
@@ -57,6 +19,8 @@ export function createNullObject<T extends Record<string, any>>(type: T): T {
          else obj1.prototype[key] = obj2.prototype[key]
      })
  }
+
+ // given a room and a structure type, return the number of structures of that type in the room
 
 
 export function connectedComponents(adj) {

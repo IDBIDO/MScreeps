@@ -1,24 +1,63 @@
-import {HarvesterWorkStation} from "@/workStation/harvesterWorkStation";
+import {RoomPlanningMem} from "@/access_memory/roomPlanningMem";
+
+
+export function iniStationHarvest(roomName: string, stationName: string) {
+    if (!Memory['colony'][roomName]['dpt_harvest']) Memory['colony'][roomName]['dpt_harvest'] = {};
+    if (!Memory['colony'][roomName]['dpt_harvest'][stationName]) Memory['colony'][roomName]['dpt_harvest'][stationName] = {};
+
+
+    const roomPlanningMem = new RoomPlanningMem(roomName);
+
+    let num = 0;
+    if (stationName === 'source1') num = 0;
+    else if (stationName === 'source2') num = 1;
+    else if (stationName === 'mineral') num = 2;
+
+    const sourceID_Room_position = roomPlanningMem.getSourceID_Room_position(num);
+
+    let iniMem: HarvestStationMemory = {
+        creepConfig: {
+            body: {
+                MOVE: 2,
+                WORK: 1,
+            },
+            priority: 1,
+            creepMemory: {
+                role: "harvester",
+
+                working: false,
+                ready: false,
+                dontPullMe: true,
+
+                workStationID: stationName,
+                departmentName: "dpt_harvest",
+                roomName: roomName,
+            }
+        },
+        creepDeadTick: {},
+        order: [],
+        task: [],
+        usage: {sourceInfo: sourceID_Room_position, targetInfo: {id: null, roomName: null, pos: null}}
+
+    }
+
+    let auxRoomPos = new RoomPosition(sourceID_Room_position.pos[0], sourceID_Room_position.pos[1], roomName);
+    let adjPosList: RoomPosition[] = auxRoomPos['getAdjacentPositions']();
+    for (let i in adjPosList) {
+        let auxPos = adjPosList[i];
+        if (auxPos['isWalkable']())
+            iniMem.task.push([auxPos.x, auxPos.y, 0]);
+
+    }
+    Memory['colony'][roomName]['dpt_harvest'][stationName] = iniMem;
+
+}
 
 export function iniDptHarvest(roomName: string) {
     Memory['colony'][roomName]['dpt_harvest'] = {};
-    iniWorkStationSource1(roomName);
-    iniWorkStationSource2(roomName);
-    iniMineralStation(roomName);
-}
+    iniStationHarvest(roomName, 'source1');
+    iniStationHarvest(roomName, 'source2');
+    iniStationHarvest(roomName, 'mineral');
+    //iniStationHarvest(roomName, 'highway');
 
-
-export function iniWorkStationSource1(roomName: string) {
-    let harvesterStation = new HarvesterWorkStation(roomName, 'source1');
-    harvesterStation.initializeAndSave();
-}
-
-export function iniWorkStationSource2(roomName: string) {
-    let harvesterStation = new HarvesterWorkStation(roomName, 'source2');
-    harvesterStation.initializeAndSave();
-}
-
-export function iniMineralStation(roomName: string) {
-    let harvesterStation = new HarvesterWorkStation(roomName, 'mineral');
-    harvesterStation.initializeAndSave();
 }

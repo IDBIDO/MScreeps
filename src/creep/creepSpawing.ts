@@ -1,87 +1,90 @@
-import {getBody, getEnergyRCL, ticksToSpawn} from "@/creep/creepBody";
+import {CreepSpawnMem} from "@/access_memory/creepSpawnMem";
+import {countStructure} from "@/utils";
 
 export class CreepSpawning {
+
     roomName: string;
-    memory: CreepSpawnMemory;
+    access_memory: CreepSpawnMem;
 
     constructor(roomName: string) {
         this.roomName = roomName;
-        this.memory = Memory['colony'][roomName]['creepSpawning'];
+        this.access_memory = new CreepSpawnMem(roomName);
     }
 
-    /****************************  SPAWN CONFIG  ******************************/
-    public addSpawnId(spawnId: string): void {
-        this.memory['spawnId'].push(spawnId);
-    }
-    private deleteSpawnId(spawnId: string): void {
-        let spawnIdList = this.memory['spawnId']
-        let index = spawnIdList.indexOf(spawnId);
-        spawnIdList.splice(index, 1);
-    }
+    private executeOrder(): void {
+        // get first order
+        const firstOrder = this.access_memory.getOrder();
+        if (firstOrder) {
+            switch (firstOrder.name) {
 
-    /****************************  SPAWN TASK  ******************************/
-    public addSpawnTask(creepName: string ,spawnTask: CreepSpawnConfig): void {
-        const priority = spawnTask.priority;
-        const body = spawnTask.body;
-        const creepMemory = spawnTask.creepMemory;
-
-        const aux: SpawnTask = {
-            body: body,
-            creepMemory: creepMemory,
-        }
-        this.memory.spawnTask[priority.toString()][creepName] = aux;
-        console.log('addSpawnTask: ' + creepName + ' provide by station ' + creepMemory.workStationID);
-    }
-
-    private deleteSpawnTask(creepName: string): void {
-        for (let priority = 0; priority < 3; priority++) {
-            let spawnTaskList = this.memory.spawnTask[priority.toString()];
-            if (spawnTaskList[creepName]) {
-                delete spawnTaskList[creepName];
-                console.log('deleteSpawnTask: ' + creepName);
-            }
-        }
-    }
-
-    private spawnCreep(spawnId: string, creepName: string, spawnTask: SpawnTask): ScreepsReturnCode {
-        const spawn = Game.getObjectById(spawnId as Id<StructureSpawn>);
-        //const body = spawnTask.body;
-        const energyRCL = getEnergyRCL(Game.rooms[this.roomName].energyCapacityAvailable);
-        const body = getBody(spawnTask.creepMemory.role, energyRCL, spawnTask.body);
-        //console.log(spawnTask.creepMemory.role + ' ' + energyRCL + ' ' + spawnTask.body);
-        //console.log(body) JSON.parse(JSON.stringify(person))
-        const creepMemory = JSON.parse(JSON.stringify(spawnTask.creepMemory))
-        const result = spawn.spawnCreep(body, creepName, { memory: creepMemory });
-        return result;
-    }
-
-    private setCreepDeadTime(creepName: string, spawnTask: SpawnTask) {
-        const creepDeadTick = Memory['colony'][this.roomName][spawnTask.creepMemory.departmentName][spawnTask.creepMemory.workStationID]['creepDeadTick'];
-        const energyRCL = getEnergyRCL(Game.rooms[this.roomName].energyCapacityAvailable);
-
-        creepDeadTick[creepName] = Game.time + 1501 + ticksToSpawn(spawnTask.creepMemory.role, energyRCL);
-    }
-    run(): void {
-        for (const spawnId of this.memory.spawnId) {
-            const spawn = Game.getObjectById(spawnId as Id<StructureSpawn>);
-
-            if (spawn.spawning) {
-                continue;
-            }
-            for (let priority = 0; priority < 3; priority++) {
-                const spawnTaskList:SpawnTaskSet = this.memory.spawnTask[priority];
-                const creepName = Object.keys(spawnTaskList)[0];
-                if (creepName) {
-                    let spawnTask = spawnTaskList[creepName];
-                    const creepResult = this.spawnCreep(spawnId, creepName, spawnTask);
-                    if (creepResult == OK) {
-                        this.deleteSpawnTask(creepName);
-                        this.setCreepDeadTime(creepName ,spawnTask);
-                    }
+                case 'UPDATE_BUILDING_INFO':
+                    this.updateBuildingInfo(firstOrder.data as {targetInfo: ID_Room_position});
                     break;
+                case 'SEARCH_BUILDING_TASK':
+                    this.searchBuildingTask();
+                    break;
+            }
+
+            // delete the first order
+            this.access_memory.removeOrder();
+        }
+    }
+
+    private updateBuildingInfo(data: {targetInfo: ID_Room_position}): void {
+        // if the data is a spawn, add to spawnID, else do nothing
+
+        // @ts-ignore
+        if (Game.getObjectById(data.targetInfo.id).structureType === 'spawn') {
+            this.access_memory.addSpawnID(data.targetInfo.id);
+        }
+
+    }
+
+    private searchBuildingTask(): void {
+        const numSpawn = countStructure(this.roomName, 'spawn');
+        const numExtension = countStructure(this.roomName, 'extension');
+
+        const roomObject = Game.rooms[this.roomName];
+        const numSpawnAvailableToBuild = CONTROLLER_STRUCTURES.spawn[roomObject.controller.level] - numSpawn;
+        const numExtensionAvailableToBuild = CONTROLLER_STRUCTURES.extension[roomObject.controller.level] - numExtension;
+
+        // send spawn and extension build task
+        // ... WAIT TO IMPLEMENT BUILD DEPARTMENT
+
+    }
+
+    private executeSpawnTask(): void {
+        const spawnTask = this.access_memory.getSpawnTask();
+        const spawnIDList = this.access_memory.getSpawnID();
+
+        // for each spawnID
+        for (let spawnID of spawnIDList) {
+            // get spawn
+            const spawn = Game.getObjectById(spawnID as Id<StructureSpawn>)
+
+            // if spawn is spawning, continue
+            if (spawn.spawning) continue;
+            if (spawnTask) {
+                const creepName = spawnTask.creepName;
+                const creepBody = spawnTask.creepBody;
+                const creepMemory = spawnTask.creepMemory;
+
+                // spawn creep
+                const result = spawn.spawnCreep(creepBody, creepName, {memory: creepMemory});
+                if (result === OK) {
+                    // remove spawnTask
+                    this.access_memory.removeSpawnTask(creepName);
                 }
             }
+
         }
+
+
+    }
+
+    public run(): void {
+        this.executeOrder();
+        this.executeSpawnTask();
     }
 
 }

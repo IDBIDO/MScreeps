@@ -2,6 +2,13 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+function countStructure(room, structureType) {
+    return Game.rooms[room].find(FIND_STRUCTURES, {
+        filter: (structure) => {
+            return structure.structureType === structureType;
+        }
+    }).length;
+}
 /**
   * 把 obj2 的原型合并到 obj1 的原型上
   * 如果原型的键以 Getter 结尾，则将会把其挂载为 getter 属性
@@ -2139,803 +2146,240 @@ function generateRoadReference(roadList, roomName) {
     getRoadReference(roadList, roomName);
 }
 
-const energyAvailable = [300, 550, 800, 1300, 1800, 2300, 5600, 10000];
-function getEnergyRCL(energyAmount) {
-    let i = 0;
-    while (i < 8) {
-        if (energyAvailable[i] > energyAmount)
-            return i;
-        ++i;
-    }
-    return 8;
-}
-function getBody(role, rcl, option) {
-    let prototype = bodyPrototype[role];
-    let act = [];
-    if (option == 'default') {
-        const componentNum = bodyComponentNumDefault[role][rcl];
-        for (let i in prototype) {
-            for (let j = 0; j < componentNum[i]; ++j) {
-                act.push(prototype[i]);
-            }
-        }
-    }
-    else if (option == 'manual') {
-        const componentNumManual = bodyComponentNumManual[role][rcl];
-        for (let i in prototype) {
-            for (let j = 0; j < componentNumManual[i]; ++j) {
-                act.push(prototype[i]);
-            }
-        }
-    }
-    return act;
-}
-const bodyPrototype = {
-    harvester: [WORK, CARRY, MOVE],
-    initializer: [WORK, CARRY, MOVE],
-    worker: [WORK, CARRY, MOVE],
-    builder: [WORK, CARRY, MOVE],
-    transporter: [CARRY, MOVE],
-    upgrader: [WORK, CARRY, MOVE],
-};
-const bodyComponentNumManual = {
-    harvester: [1, 1, 1, 1, 1, 1, 1, 1],
-};
-//default body component number
-const bodyComponentNumDefault = {
-    //WORK  CARRY   MOVE
-    harvester: {
-        1: [2, 1, 1],
-        2: [3, 1, 2],
-        3: [4, 1, 2],
-        4: [6, 2, 2],
-        5: [6, 2, 3],
-        6: [6, 4, 3],
-        7: [6, 6, 3],
-        8: [6, 6, 3],
-    },
-    transporter: {
-        1: [3, 3],
-        2: [6, 3],
-        3: [6, 3],
-        4: [6, 3],
-        5: [6, 3],
-        6: [10, 5],
-    },
-    initializer: {
-        1: [2, 1, 1],
-    }
-};
-
-class CreepSpawning {
-    constructor(roomName) {
-        this.roomName = roomName;
-        this.memory = Memory['colony'][roomName]['creepSpawning'];
-    }
-    getSpawnIdList() {
-        return this.memory['spawnId'];
-    }
-    getSpawnTaskList(priority) {
-        return this.memory['spawnTask'][priority];
-    }
-    getCreepSpawnConfig(department, workStationId) {
-        const creepConfig = Memory['colony'][this.roomName][department]['workStation'][workStationId]['creepConfig'];
-        return creepConfig;
-    }
-    getCreepWorkPosition(creepName, department, workStationId, creepIndex) {
-        const creepList = Memory['colony'][this.roomName][department]['workStation'][workStationId]['creepList'];
-        const creepState = creepList[creepIndex];
-        const creepWorkPosition = creepState['workPosition'];
-        const workRoomName = creepState['workRoomName'];
-        return new RoomPosition(creepWorkPosition[0], creepWorkPosition[0], workRoomName);
-    }
-    addSpawnTask(spawnTask) {
-        const creepConfig = this.getCreepConfig(spawnTask);
-        const priority = creepConfig['priority'];
-        this.memory['spawnTask'][priority].push(spawnTask);
-    }
-    addSpawnId(spawnId) {
-        this.memory['spawnId'].push(spawnId);
-    }
-    removeSpawnId(spawnId) {
-        let spawnIdList = this.getSpawnIdList();
-        let index = spawnIdList.indexOf(spawnId);
-        spawnIdList.splice(index, 1);
-    }
-    removeSpawnTask(spawnTask, priority) {
-        let spawnTaskList = this.getSpawnTaskList(priority);
-        let index = spawnTaskList.indexOf(spawnTask);
-        spawnTaskList.splice(index, 1);
-    }
-    getSpawnTaskByCreepName(creepName) {
-        for (let priority = 0; priority < 3; priority++) {
-            let spawnTaskList = this.getSpawnTaskList(priority);
-            for (let spawnTask of spawnTaskList) {
-                if (spawnTask.creepName == creepName) {
-                    return spawnTask;
-                }
-            }
-        }
-        return null;
-    }
-    getCreepConfig(spawnTask) {
-        return Memory['colony'][this.roomName][spawnTask.departmentName][spawnTask.workStationId]['creepConfig'];
-    }
-    spawnCreep(spawnTask, spawnId) {
-        let spawn = Game.getObjectById(spawnId);
-        let creepName = spawnTask.creepName;
-        let creepConfig = this.getCreepConfig(spawnTask);
-        let creepMemory = creepConfig['memory'];
-        creepMemory.creepIndex = spawnTask.creepIndex;
-        creepMemory.creepTask = spawnTask.creepTask;
-        const workPos = this.getCreepWorkPosition(creepName, spawnTask.departmentName, spawnTask.workStationId, spawnTask.creepIndex);
-        creepMemory.creepTask.workPosition = {
-            pos: [workPos.x, workPos.y],
-            roomName: workPos.roomName
-        };
-        let energyRCL = getEnergyRCL(Game.rooms[this.roomName].energyCapacityAvailable);
-        console.log('energyRCL: ' + energyRCL);
-        let creepBody = getBody(creepMemory['role'], energyRCL, creepConfig['body']);
-        console.log('role: ' + creepMemory['role']);
-        console.log('creepBody: ' + creepBody);
-        let creepResult = spawn.spawnCreep(creepBody, creepName, { memory: creepMemory });
-        return creepResult;
-    }
-    run() {
-        for (let spawnId of this.getSpawnIdList()) {
-            let spawn = Game.getObjectById(spawnId);
-            if (spawn.spawning) {
-                continue;
-            }
-            for (let priority = 0; priority < 3; priority++) {
-                let spawnTaskList = this.getSpawnTaskList(priority);
-                if (spawnTaskList.length > 0) {
-                    let spawnTask = spawnTaskList[0];
-                    const creepResult = this.spawnCreep(spawnTask, spawnId);
-                    if (creepResult == OK) {
-                        this.removeSpawnTask(spawnTask, priority);
-                        //this.removeSpawnId(spawnId);
-                    }
-                    break;
-                }
-            }
-        }
-    }
-}
-
 class RoomPlanningMem {
-    constructor(mainRoom) {
-        this.dpt_name = 'roomPlanning';
-        this.roomName = mainRoom;
-        this.rootMem = Memory['colony'][mainRoom][this.dpt_name]['model'];
-    }
-    getStructureList(structureType) {
-        return Memory['colony'][this.roomName]['roomPlanning']['model'][structureType];
-    }
-    getSource1Data() {
-        return Memory['colony'][this.roomName]['roomPlanning']['model']['source'][0];
-    }
-    getSource2Data() {
-        return Memory['colony'][this.roomName]['roomPlanning']['model']['source'][1];
-    }
-    getMineralData() {
-        return Memory['colony'][this.roomName]['roomPlanning']['model']['source'][2];
-    }
-}
-
-class CreepSpawningMem {
     constructor(roomName) {
         this.roomName = roomName;
-        this.rootMem = Memory['colony'][roomName]['creepSpawning'];
+        this.rootMem = Memory['colony'][roomName]['roomPlanning'];
     }
-    getSpawnId() {
-        return this.rootMem['spawnId'];
+    /***************** MODEL *****************/
+    getModel(structureType) {
+        return this.rootMem['model'][structureType];
     }
-    getSpawnTask(priority) {
-        return this.rootMem['spawnTask'][priority];
+    getSourceModel(num) {
+        return this.rootMem['model']['source'][num];
     }
-    addSpawnTask(spawnTask, priority) {
-        this.rootMem['spawnTask'][priority].push(spawnTask);
-    }
-    deleteSpawnTask(spawnTask, priority) {
-        let index = this.rootMem['spawnTask'][priority].indexOf(spawnTask);
-        this.rootMem['spawnTask'][priority].splice(index, 1);
-    }
-    addSpawnId(spawnId) {
-        this.rootMem['spawnId'].push(spawnId);
-    }
-    deleteSpawnId(spawnId) {
-        let index = this.rootMem['spawnId'].indexOf(spawnId);
-        this.rootMem['spawnId'].splice(index, 1);
-    }
-}
-
-class ColonyMem {
-    constructor(mainRoom) {
-        this.mainRoomName = mainRoom;
-        this.mainRoot = Memory['colony'][mainRoom];
-    }
-    /*************************************** ROOM PLANNING ACCESS ***************************************/
-    /* Planning mem */
-    getRoomPlanningMem() {
-        return new RoomPlanningMem(this.mainRoomName);
-    }
-    /**************************************** CREEP SPAWNING ACCESS ******************************************/
-    getCreepSpawningMem() {
-        return new CreepSpawningMem(this.mainRoomName);
-    }
-    /*************************************** DEPARTMENTS ACCESS *************************************/
-    // GET ALL WORK STATION OF DPT
-    getDptWorkStationsMem(dptName) {
-        return this.mainRoot[dptName];
-    }
-    // GET SPECIFIC WORK STATION
-    getWorkStationMem(dptName, workStationId) {
-        return this.mainRoot[dptName][workStationId];
-    }
-    addWorkStation(dptName, workStationId, data) {
-        /*
-        if (this.rootMem['workStation'][workStationId] == undefined) {
-            this.rootMem['workStation'][workStationId] = data;
-            return true;
-        } else {
-            return false;
-        }
-        */
-        if (this.mainRoot[dptName][workStationId] == undefined) {
-            this.mainRoot[dptName][workStationId] = data;
-            return true;
-        }
-        return false;
-    }
-}
-
-class WorkStation {
-    /********** mutator ********/
-    //to create new work station
-    /*
-        1. give roomName -> create new work station
-        2. give id, roomName -> load work station
-    */
-    constructor(roomName, stationType) {
-        this.roomName = roomName;
-        if (stationType) {
-            if (stationType == 'highway') {
-                this.id = 'highway_' + Game.time;
-            }
-            else {
-                this.id = stationType;
-            }
-            //let auxMem = new DptHarvesterMem('')
-            //this.mem = Memory['colony'][roomName]['']['workStations'][id];
-        }
-        else {
-            this.id = this.randomID();
-            //this.type = null;
-            this.order = [];
-            this.creepList = [];
-            this.sourceInfo = null;
-            this.targetInfo = null;
-            this.creepConfig = null;
-            /*
-            if (pos && roomName) {
-                this.distanceToSpawn = this.getDistanceToNearSpawn(pos, roomName);
-            }
-            else {
-                this.distanceToSpawn = 0;
-            }
-            */
-            this.needTransporterCreep = false;
-            this.transporterSetting = undefined;
-        }
-    }
-    needSubstituteCreep() {
-        return this.sourceInfo.roomName != this.roomName || this.targetInfo.roomName != this.roomName;
-    }
-    randomID() {
-        return Math.random().toString(36).substr(2, 9);
-    }
-    getID() {
-        return this.id;
-    }
-    sendSpawnTask(spawnTask, priority) {
-        const colonyMem = new ColonyMem(this.roomName);
-        const creepSpawningMem = colonyMem.getCreepSpawningMem();
-        creepSpawningMem.addSpawnTask(spawnTask, priority);
-    }
-    getFreeWorkPosition() {
-        let workPositionList = this.getMemObject()['workPosition'];
-        //find the first free work position
-        for (let workPosition of workPositionList) {
-            if (workPosition[2] == 0) {
-                return [workPosition[0], workPosition[1]];
-            }
-        }
-    }
-    setWorkPosition(workPos) {
-        let workPositionList = this.getMemObject()['workPosition'];
-        for (let workPosition of workPositionList) {
-            if (workPosition[0] == workPos[0] && workPosition[1] == workPos[1]) {
-                workPosition[2] = 1;
-            }
-        }
-    }
-    unSetWorkPosition(workPos) {
-        let workPositionList = this.getMemObject()['workPosition'];
-        for (let workPosition of workPositionList) {
-            if (workPosition[0] == workPos[0] && workPosition[1] == workPos[1]) {
-                workPosition[2] = 0;
-            }
-        }
-    }
-    addCreep() {
-        //generate random creep name
-        let creepName = this.id + '_' + Math.random().toString(36).substr(2, 7).toUpperCase();
-        let workPosition = this.getFreeWorkPosition();
-        this.setWorkPosition(workPosition);
-        let creepState = {
-            creepName: creepName,
-            deadTick: 0,
-            workPosition: workPosition,
-            workRoomName: this.roomName,
-            transporterCreepName: null,
-            transporterDeadTick: 0
-        };
-        if (this.needSubstituteCreep()) {
-            creepState.substituteCreepName = null;
-            creepState.substituteDeadTick = 0;
-        }
-        let stationData = this.getMemObject();
-        stationData['creepList'].push(creepState);
-        console.log('[' + this.departmentName + ', ' + this.roomName + '] Work station ' + this.id + ' add creep, now creep list size is ' + stationData['creepList'].length);
-    }
-    removeCreep() {
-        let creepState = this.creepList.shift();
-        this.unSetWorkPosition(creepState.workPosition);
-        console.log('[' + this.departmentName + ', ' + this.roomName + '] Work station ' + this.id + ' remove creep, now creep list size is ' + this.creepList.length);
-    }
-    setTransporterCreep() {
-        let mem = this.getMemObject();
-        mem['needTransporterCreep'] = true;
-        console.log('[' + this.departmentName + ', ' + this.roomName + '] Work station ' + this.id + ' set transporter creep');
-    }
-    unSetTransporterCreep() {
-        let mem = this.getMemObject();
-        mem['needTransporterCreep'] = false;
-        console.log('[' + this.departmentName + ', ' + this.roomName + '] Work station ' + this.id + ' unset transporter creep');
-    }
-    executeOrder() {
-        let mem = this.getMemObject();
-        let order = mem['order'][0];
-        if (order) {
-            switch (order) {
-                case "ADD_CREEP":
-                    this.addCreep();
-                    break;
-                case "DELETE_CREEP":
-                    this.removeCreep();
-                    break;
-                case "SET_TRANSPORTER_CREEP":
-                    this.setTransporterCreep();
-                    break;
-                case "UNSET_TRANSPORTER_CREEP":
-                    this.unSetTransporterCreep();
-                    break;
-            }
-            mem['order'].shift();
-        }
-    }
-    addOrder(order) {
-        let mem = this.getMemObject();
-        mem['order'].push(order);
-        console.log('Work station ' + this.id + ' add order: ' + order);
-    }
-    /********** consultor ********/
-    getStationId() {
-        return this.id;
-    }
-    getDistanceToNearSpawn(pos, roomName) {
-        const colonyMem = new ColonyMem(roomName);
-        let spawnList = colonyMem.getRoomPlanningMem().getStructureList('spawn');
-        //let spawnList:modelData[] = RoomPlanningMem.getStructureList(roomName, 'spawn');
-        let positionList = [];
-        for (let spawn of spawnList) {
-            positionList.push(spawn.pos);
-        }
-        return minDistance(pos, positionList);
-    }
-    sendCreepSpawnTask(creepName, department, workStationId, creepIndex) {
-        let creepSpawning = new CreepSpawning(this.roomName);
-        creepSpawning.addSpawnTask({
-            creepName: creepName,
-            departmentName: department,
-            workStationId: workStationId,
-            creepIndex: creepIndex,
-            creepTask: this.getCreepTask(),
-        });
-    }
-    renewCreeps() {
-        let mem = this.getMemObject();
-        let creepList = mem['creepList'];
-        for (let creepState of creepList) {
-            if (creepState.deadTick != null)
-                if (creepState.deadTick <= Game.time) {
-                    this.sendCreepSpawnTask(creepState.creepName, this.departmentName, this.id, creepList.indexOf(creepState));
-                    creepState.deadTick = null;
-                }
-        }
-    }
-    /******** end of setter ********/
-    run() {
-        this.executeOrder();
-        this.renewCreeps();
-    }
-}
-
-class HarvesterWorkStation extends WorkStation {
-    constructor(roomName, id) {
-        super(roomName, id);
-        this.departmentName = 'dpt_harvest';
-        this.sourceInfo = {
-            sourceId: null,
-            roomName: roomName,
-            pos: null,
-        };
-    }
-    // load work station from memory
-    getMemObject() {
-        const colonyMem = new ColonyMem(this.roomName);
-        return colonyMem.getWorkStationMem(this.departmentName, this.id);
-        //let mem = new DptHarvesterMem(this.roomName);
-        //return mem.getWorkStation(this.id);
-    }
-    getCreepTask() {
-        const mem = this.getMemObject();
-        const source = {
-            id: mem.sourceInfo.sourceId,
-            roomName: mem.sourceInfo.roomName,
-            pos: mem.sourceInfo.pos,
-        };
-        const target = {
-            id: mem.targetInfo.targetId,
-            roomName: mem.targetInfo.roomName,
-            pos: mem.targetInfo.pos,
-        };
-        //workPosition[0] = x, workPosition[1] = y, workPosition[2]: 0|1 = ocupied?--------------------------
+    getSourceID_Room_position(num) {
+        const sourceModel = this.getSourceModel(num);
         return {
-            sourceInfo: source,
-            targetInfo: target,
-            workPosition: null,
-        };
-    }
-    getStationData() {
-        return {
-            //type: this.type,
-            order: this.order,
-            workPosition: this.workPosition,
-            creepList: this.creepList,
-            sourceInfo: this.sourceInfo,
-            targetInfo: this.targetInfo,
-            creepConfig: this.creepConfig,
-            distanceToSpawn: this.distanceToSpawn,
-            needTransporterCreep: this.needTransporterCreep,
-            transporterSetting: this.transporterSetting
-        };
-    }
-    /***************** ORDER ***********************/
-    /************* INITIALIZE ***************/
-    getRoomSourceData(stationType) {
-        const colonyMem = new ColonyMem(this.roomName);
-        const data = colonyMem.getRoomPlanningMem();
-        if (stationType == 'source1') {
-            return data.getSource1Data();
-        }
-        else if (stationType == 'source2') {
-            return data.getSource2Data();
-        }
-        else if (stationType == 'mineral') {
-            return data.getMineralData();
-        }
-    }
-    // create new work station and save to memory
-    initializeHarvesterWorkStationAndSave(stationType, sourceId, pos) {
-        this.initializeHarvesterWorkStation(stationType, sourceId, pos);
-        this.saveToMemory(stationType);
-    }
-    // create new work station
-    //sourceId only for highway, also need parameter pos
-    initializeHarvesterWorkStation(stationType, sourceId, pos) {
-        //this.type = stationType;
-        this.id = stationType;
-        this.order = [];
-        this.creepList = [];
-        this.targetInfo = {
-            targetId: null,
+            id: sourceModel.id,
             roomName: this.roomName,
-            pos: null,
+            pos: sourceModel.pos,
         };
-        let bodyType = 'default';
-        let priority = 0;
-        if (stationType.includes('highway')) {
-            bodyType = 'big';
-            priority = 1;
-        }
-        this.creepConfig = {
-            body: bodyType,
-            priority: priority,
-            memory: {
+    }
+}
+
+function iniStationHarvest(roomName, stationName) {
+    if (!Memory['colony'][roomName]['dpt_harvest'])
+        Memory['colony'][roomName]['dpt_harvest'] = {};
+    if (!Memory['colony'][roomName]['dpt_harvest'][stationName])
+        Memory['colony'][roomName]['dpt_harvest'][stationName] = {};
+    const roomPlanningMem = new RoomPlanningMem(roomName);
+    let num = 0;
+    if (stationName === 'source1')
+        num = 0;
+    else if (stationName === 'source2')
+        num = 1;
+    else if (stationName === 'mineral')
+        num = 2;
+    const sourceID_Room_position = roomPlanningMem.getSourceID_Room_position(num);
+    let iniMem = {
+        creepConfig: {
+            body: {
+                MOVE: 2,
+                WORK: 1,
+            },
+            priority: 1,
+            creepMemory: {
+                role: "harvester",
                 working: false,
                 ready: false,
-                role: 'initializer',
-                workStationID: this.id,
-                departmentName: 'dpt_harvest',
-                roomName: this.roomName,
-                dontPullMe: false,
+                dontPullMe: true,
+                workStationID: stationName,
+                departmentName: "dpt_harvest",
+                roomName: roomName,
             }
-        };
-        //this.distanceToSpawn = this.getDistanceToNearSpawn(pos, roomName);
-        this.needTransporterCreep = true; //need transporter creep to transport energy to spawn
-        this.transporterSetting = {
-            stationId: this.id,
-            needWithdraw: true,
-            amount: -1,
-            resourceType: RESOURCE_ENERGY,
-        };
-        if (sourceId) {
-            this.sourceInfo.sourceId = sourceId;
-            this.sourceInfo.pos = pos;
-        }
-        else {
-            let sourceData = this.getRoomSourceData(stationType);
-            this.sourceInfo.sourceId = sourceData.id;
-            this.sourceInfo.pos = sourceData.pos;
-        }
-        let roomName = this.roomName;
-        let sourcePos = this.sourceInfo.pos;
-        this.workPosition = [];
-        if (sourcePos && roomName) {
-            let auxRoomPos = new RoomPosition(sourcePos[0], sourcePos[1], roomName);
-            let adjPosList = auxRoomPos['getAdjacentPositions']();
-            for (let i in adjPosList) {
-                let auxPos = adjPosList[i];
-                if (auxPos['isWalkable']())
-                    this.workPosition.push([auxPos.x, auxPos.y, 0]);
-            }
-        }
+        },
+        creepDeadTick: {},
+        order: [],
+        task: [],
+        usage: { sourceInfo: sourceID_Room_position, targetInfo: { id: null, roomName: null, pos: null } }
+    };
+    let auxRoomPos = new RoomPosition(sourceID_Room_position.pos[0], sourceID_Room_position.pos[1], roomName);
+    let adjPosList = auxRoomPos['getAdjacentPositions']();
+    for (let i in adjPosList) {
+        let auxPos = adjPosList[i];
+        if (auxPos['isWalkable']())
+            iniMem.task.push([auxPos.x, auxPos.y, 0]);
     }
-    saveToMemory(stationType) {
-        //let dptHarvestMem = new DptHarvesterMem(this.roomName);
-        //const r = dptHarvestMem.addWorkStation(this.id, this.getStationData());
-        const colonyMem = new ColonyMem(this.roomName);
-        const r = colonyMem.addWorkStation(this.departmentName, this.id, this.getStationData());
-        if (r)
-            console.log('Harvester WS ' + this.id + ' save to memory');
-        else
-            console.log('ERROR: Harvester WS ' + this.id + ' save to memory FAILED! STATION ALREADY EXISTS');
-    }
+    Memory['colony'][roomName]['dpt_harvest'][stationName] = iniMem;
 }
-
 function iniDptHarvest(roomName) {
     Memory['colony'][roomName]['dpt_harvest'] = {};
-    iniWorkStationSource1(roomName);
-    iniWorkStationSource2(roomName);
-    iniMineralStation(roomName);
-}
-function iniWorkStationSource1(roomName) {
-    let harvesterStation = new HarvesterWorkStation(roomName);
-    harvesterStation.initializeHarvesterWorkStationAndSave('source1');
-}
-function iniWorkStationSource2(roomName) {
-    let harvesterStation = new HarvesterWorkStation(roomName);
-    harvesterStation.initializeHarvesterWorkStationAndSave('source2');
-}
-function iniMineralStation(roomName) {
-    let harvesterStation = new HarvesterWorkStation(roomName);
-    harvesterStation.initializeHarvesterWorkStationAndSave('mineral');
+    iniStationHarvest(roomName, 'source1');
+    iniStationHarvest(roomName, 'source2');
+    iniStationHarvest(roomName, 'mineral');
+    //iniStationHarvest(roomName, 'highway');
 }
 
 function iniCreepSpawning(roomName) {
     Memory['colony'][roomName]['creepSpawning'] = {};
+    Memory['colony'][roomName]['creepSpawning']['order'] = [];
     Memory['colony'][roomName]['creepSpawning']['spawnId'] = [];
     Memory['colony'][roomName]['creepSpawning']['spawnTask'] = {
-        0: [],
-        1: [],
-        2: [],
+        0: {},
+        1: {},
+        2: {},
     };
+    // search for spawns in the room
+    let spawns = Game.rooms[roomName].find(FIND_MY_SPAWNS);
+    for (let i in spawns) {
+        Memory['colony'][roomName]['creepSpawning']['spawnId'].push(spawns[i].id);
+    }
 }
 
-class LogisticWorkStation extends WorkStation {
-    constructor(roomName, id) {
-        super(roomName, id);
-        this.departmentName = 'dpt_logistic';
-        this.sourceInfo = {
-            sourceId: null,
-            roomName: roomName,
-            pos: null,
-        };
-        this.availableCreep = [];
-        this.taskList = {
-            temporalTask: [],
-            permanentTask: [],
-        };
-        this.taskList.temporalTask = [];
-        this.taskList.permanentTask = [];
+class OrderManager {
+    constructor(roomName) {
+        this.roomName = roomName;
+        this.rootMem = Memory['colony'][roomName];
     }
-    getCreepTask() {
-        return {
-            taskID: null,
-            taskType: null,
-            sourceInfo: {
-                id: null,
-                roomName: this.roomName,
-                pos: null,
-            },
-            targetInfo: {
-                id: null,
-                roomName: null,
-                pos: null,
-            },
-            workPosition: {
-                pos: null,
-                roomName: null,
-            },
-        };
-    }
-    getMemObject() {
-        const colonyMem = new ColonyMem(this.roomName);
-        return colonyMem.getWorkStationMem(this.departmentName, this.id);
-    }
-    getStationData() {
-        const data = {
-            order: this.order,
-            availableCreep: this.availableCreep,
-            creepConfig: this.creepConfig,
-            creepList: this.creepList,
-            sourceInfo: this.sourceInfo,
-            targetInfo: this.targetInfo,
-            taskList: this.taskList,
-        };
-        return data;
-    }
-    /*********************************** ORDERS ***************************************/
-    /*********************************** INITIALIZACION ***************************************/
-    initializeLogisticWorkStationAndSave(stationType) {
-        this.initializeLogisticWorkStation(stationType);
-        this.saveToMemory(stationType);
-    }
-    initializeLogisticWorkStation(stationType) {
-        this.id = stationType;
-        this.order = [];
-        this.creepList = [];
-        this.sourceInfo = {
-            sourceId: null,
-            roomName: this.roomName,
-            pos: null,
-        };
-        this.targetInfo = {
-            targetId: null,
-            roomName: null,
-            pos: null,
-        };
-        let bodyType = 'default';
-        let priority = 1;
-        if (stationType.includes('externalTransporter')) {
-            bodyType = 'big';
-            priority = 2;
+    sendOrder(orderName, data, department, stationType) {
+        if (stationType != null) {
+            this.rootMem[department][stationType]['order'].push({
+                name: orderName,
+                data: data,
+            });
         }
-        this.creepConfig = {
-            body: bodyType,
-            priority: priority,
-            memory: {
-                working: false,
-                ready: false,
-                role: 'transporter',
-                workStationID: this.id,
-                departmentName: this.departmentName,
-                roomName: this.roomName,
-                dontPullMe: false,
+        else {
+            this.rootMem[department]['order'].push({
+                name: orderName,
+                data: data,
+            });
+        }
+    }
+    sendIniOrder() {
+        // for each harvest station send SEARCH_BUILDING_TASK & UPDATE_CREEP_NUM order
+        const harvestStationList = this.rootMem['dpt_harvest'];
+        for (let stationType in harvestStationList) {
+            this.sendOrder('SEARCH_BUILDING_TASK', {}, 'dpt_harvest', stationType);
+            this.sendOrder('UPDATE_CREEP_NUM', {}, 'dpt_harvest', stationType);
+        }
+        // for creepSpawning search for spawn and add it to spawnID using UPDATE_BUILDING_INFO order
+        const roomObject = Game.rooms[this.roomName];
+        const spawnList = roomObject.find(FIND_MY_STRUCTURES, {
+            filter: (structure) => {
+                return structure.structureType === 'spawn';
             }
-        };
-    }
-    saveToMemory(stationType) {
-        //let dptHarvestMem = new DptHarvesterMem(this.roomName);
-        //const r = dptHarvestMem.addWorkStation(this.id, this.getStationData());
-        const colonyMem = new ColonyMem(this.roomName);
-        const r = colonyMem.addWorkStation(this.departmentName, this.id, this.getStationData());
-        if (r)
-            console.log('Logistic WS ' + this.id + ' save to memory');
-        else
-            console.log('ERROR: Logistic WS ' + this.id + ' save to memory FAILED! STATION ALREADY EXISTS');
-    }
-    /*********************************** UPDATE ***************************************/
-    setSourceInfo(sourceId, pos, roomName) {
-        this.sourceInfo = {
-            sourceId: sourceId,
-            roomName: roomName,
-            pos: pos,
-        };
-    }
-    // random id for the task
-    generateTaskId() {
-        const id = Math.random().toString(36).substr(2, 9);
-        return id;
-    }
-    addTemporalTask(task) {
-        //this.taskList.temporalTask.push(task);
-        this.taskList.temporalTask[this.generateTaskId()] = task;
-    }
-    addPermanentTask(task) {
-        //this.taskList.permanentTask.push(task);
-        this.taskList.permanentTask[this.generateTaskId()] = task;
-    }
-    removeTemporalTask(taskID) {
-        /*
-        const index = this.taskList.temporalTask.indexOf(task);
-        if (index > -1) {
-            this.taskList.temporalTask.splice(index, 1);
-        }
-         */
-        delete this.taskList.temporalTask[taskID];
-    }
-    removePermanentTask(task) {
-        /*
-        const index = this.taskList.permanentTask.indexOf(task);
-        if (index > -1) {
-            this.taskList.permanentTask.splice(index, 1);
-        }
-         */
-        delete this.taskList.permanentTask[task.taskID];
-    }
-    addAvailableCreep(creepName) {
-        if (!this.availableCreep.includes(creepName)) {
-            this.availableCreep.push(creepName);
+        });
+        for (let spawn of spawnList) {
+            this.sendOrder('UPDATE_BUILDING_INFO', { targetInfo: { id: spawn.id, roomName: this.roomName, pos: [0, 0] } }, 'creepSpawning', null);
         }
     }
-    removeAvailableCreep(creepName) {
-        const index = this.availableCreep.indexOf(creepName);
-        if (index > -1) {
-            this.availableCreep.splice(index, 1);
-        }
-    }
-}
-
-function iniDptLogistic(roomName) {
-    Memory['colony'][roomName]['dpt_logistic'] = {};
-    iniWorkStationInterior(roomName);
-    iniWorkStationExterior(roomName);
-}
-function iniWorkStationInterior(roomName) {
-    let logisticStation = new LogisticWorkStation(roomName);
-    logisticStation.initializeLogisticWorkStationAndSave('interiorTransporter');
-}
-function iniWorkStationExterior(roomName) {
-    let logisticStation = new LogisticWorkStation(roomName);
-    logisticStation.initializeLogisticWorkStationAndSave('externalTransporter');
 }
 
 function iniColony(roomName) {
+    if (!Memory['colony'])
+        Memory['colony'] = {};
     iniRoomPlanning(roomName);
-    iniDptHarvest(roomName);
-    iniDptLogistic(roomName);
     iniCreepSpawning(roomName);
+    iniDptHarvest(roomName);
+    const orderManager = new OrderManager(roomName);
+    orderManager.sendIniOrder();
+    if (!Memory['creeps'])
+        Memory['creeps'] = {};
 }
 
-global.mScreeps = {
+global.api = {
     createColony(roomName) {
-        //mScreeps.createColony('W7N7');
         iniColony(roomName);
-        const colonyMem = new ColonyMem(roomName);
-        let spawnList = colonyMem.getRoomPlanningMem().getStructureList('spawn');
-        const roomObject = new Room(roomName);
-        //roomObject.createConstructionSite(spawnList[0].pos[0], spawnList[0].pos[1], STRUCTURE_SPAWN);
-        roomObject.createFlag(spawnList[0].pos[0], spawnList[0].pos[1], 'spawn');
         return 'Colony ' + roomName + ' created';
-    },
-    deleteColony(roomName) {
-        delete Memory['colony'][roomName];
-        return "Colony " + roomName + " deleted";
-    },
-    //************* DEBUG **************
+    }
+};
+
+class ExtendRoomPosition extends RoomPosition {
+    // public isWalkable(): boolean {
+    //     if (this.lookFor(LOOK_TERRAIN)[0] == 'wall') {
+    //         return false;
+    //     } else {
+    //         return true;
+    //     }
+    // }
+    getAdjacentPositions() {
+        const positions = [];
+        const x = this.x;
+        const y = this.y;
+        const roomName = this.roomName;
+        if (x > 0) {
+            positions.push(new RoomPosition(x - 1, y, roomName));
+        }
+        if (x < 49) {
+            positions.push(new RoomPosition(x + 1, y, roomName));
+        }
+        if (y > 0) {
+            positions.push(new RoomPosition(x, y - 1, roomName));
+        }
+        if (y < 49) {
+            positions.push(new RoomPosition(x, y + 1, roomName));
+        }
+        if (x > 0 && y > 0) {
+            positions.push(new RoomPosition(x - 1, y - 1, roomName));
+        }
+        if (x < 49 && y > 0) {
+            positions.push(new RoomPosition(x + 1, y - 1, roomName));
+        }
+        if (x > 0 && y < 49) {
+            positions.push(new RoomPosition(x - 1, y + 1, roomName));
+        }
+        if (x < 49 && y < 49) {
+            positions.push(new RoomPosition(x + 1, y + 1, roomName));
+        }
+        return positions;
+    }
+    isWalkable() {
+        if (this.lookFor(LOOK_TERRAIN)[0] == 'wall') {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+    isWalkableAndNotOccupied() {
+        if (this.isWalkable() && this.lookFor(LOOK_CREEPS).length == 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    isWalkableAndNotOccupiedAndNotReserved() {
+        if (this.isWalkableAndNotOccupied() && this.lookFor(LOOK_FLAGS).length == 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    isWalkableAndNotOccupiedAndNotReservedAndNotReservedByCreep() {
+        if (this.isWalkableAndNotOccupiedAndNotReserved() && this.lookFor(LOOK_CREEPS).length == 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    isWalkableAndNotOccupiedAndNotReservedAndNotReservedByCreepAndNotReservedByFlag() {
+        if (this.isWalkableAndNotOccupiedAndNotReservedAndNotReservedByCreep() && this.lookFor(LOOK_FLAGS).length == 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+}
+
+//import CreepExtension from "@/creep/mount.creep";
+var mountExtensions = () => {
+    assignPrototype(RoomPosition, ExtendRoomPosition);
+    //assignPrototype(Creep, CreepExtension);
 };
 
 const MemHack = {
@@ -4423,309 +3867,358 @@ module.exports = {
     // clear: clearUnused
 };
 
-class ExtendRoomPosition extends RoomPosition {
-    // public isWalkable(): boolean {
-    //     if (this.lookFor(LOOK_TERRAIN)[0] == 'wall') {
-    //         return false;
-    //     } else {
-    //         return true;
-    //     }
-    // }
-    getAdjacentPositions() {
-        const positions = [];
-        const x = this.x;
-        const y = this.y;
-        const roomName = this.roomName;
-        if (x > 0) {
-            positions.push(new RoomPosition(x - 1, y, roomName));
-        }
-        if (x < 49) {
-            positions.push(new RoomPosition(x + 1, y, roomName));
-        }
-        if (y > 0) {
-            positions.push(new RoomPosition(x, y - 1, roomName));
-        }
-        if (y < 49) {
-            positions.push(new RoomPosition(x, y + 1, roomName));
-        }
-        if (x > 0 && y > 0) {
-            positions.push(new RoomPosition(x - 1, y - 1, roomName));
-        }
-        if (x < 49 && y > 0) {
-            positions.push(new RoomPosition(x + 1, y - 1, roomName));
-        }
-        if (x > 0 && y < 49) {
-            positions.push(new RoomPosition(x - 1, y + 1, roomName));
-        }
-        if (x < 49 && y < 49) {
-            positions.push(new RoomPosition(x + 1, y + 1, roomName));
-        }
-        return positions;
+class CreepSpawnMem {
+    constructor(roomName) {
+        this.roomName = roomName;
+        this.rootMem = Memory['colony'][roomName]['creepSpawning'];
     }
-    isWalkable() {
-        if (this.lookFor(LOOK_TERRAIN)[0] == 'wall') {
-            return false;
-        }
-        else {
-            return true;
-        }
-    }
-    isWalkableAndNotOccupied() {
-        if (this.isWalkable() && this.lookFor(LOOK_CREEPS).length == 0) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-    isWalkableAndNotOccupiedAndNotReserved() {
-        if (this.isWalkableAndNotOccupied() && this.lookFor(LOOK_FLAGS).length == 0) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-    isWalkableAndNotOccupiedAndNotReservedAndNotReservedByCreep() {
-        if (this.isWalkableAndNotOccupiedAndNotReserved() && this.lookFor(LOOK_CREEPS).length == 0) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-    isWalkableAndNotOccupiedAndNotReservedAndNotReservedByCreepAndNotReservedByFlag() {
-        if (this.isWalkableAndNotOccupiedAndNotReservedAndNotReservedByCreep() && this.lookFor(LOOK_FLAGS).length == 0) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-}
-
-const harvesterRole = {
-    initializer: (data) => ({
-        source: (creep) => {
-            if (creep.harvest(Game.getObjectById(data.sourceInfo.id)) === ERR_NOT_IN_RANGE) {
-                const pos = new RoomPosition(data.workPosition.pos[0], data.workPosition[1], data.workPosition.roomName);
-                creep.moveTo(pos);
+    /***************** CONSULTER *****************/
+    getBody(bodyModel) {
+        //let prototype: BodyPartConstant[] = bodyPrototype[bodyModel.role];
+        let act = [];
+        // bodyModel is a dictionary where the keys are the body part and the values are the number of that body part
+        // use the key to get the body part and the value to get the number of that body part
+        for (let i in bodyModel) {
+            // convert i to a BodyPartConstant
+            let bodyPart = i;
+            // get the number of that body part
+            let num = bodyModel[i];
+            // add the body part to the body
+            for (let j = 0; j < num; ++j) {
+                act.push(bodyPart);
             }
-            return false;
-        },
-        target: (creep) => {
-            return true;
         }
-    }),
-    harvester: (data) => ({
-        source: (creep) => {
-            return true;
-        },
-        target: (creep) => {
-            return true;
-        }
-    })
-};
-
-function sendTaskRequest(creep) {
-    const logisticStation = new LogisticWorkStation(creep.memory['roomName'], creep.memory['workStationID']);
-    logisticStation.addAvailableCreep(creep.name);
-}
-const transporterRole = {
-    transporter: (data) => ({
-        source: (creep) => {
-            if (data.taskID != null) {
-                return transferTaskOperations[data.taskType].source(creep);
-            }
-            else {
-                sendTaskRequest(creep);
-            }
-            return true;
-        },
-        target: (creep) => {
-            if (data.taskID != null) {
-                return transferTaskOperations[data.taskType].target(creep);
-            }
-            return true;
-        }
-    })
-};
-const transferTaskOperations = {
-    FILL: {
-        source: (creep) => {
-            const creepTask = creep.memory['creepTask'];
-            // @ts-ignore
-            const source = Game.getObjectById(creepTask.sourceInfo.id);
-            //@ts-ignore
-            if (creep.withdraw(source, 'energy') == ERR_NOT_IN_RANGE) { //@ts-ignore
-                creep.moveTo(source);
-            }
-            return creep.store.getFreeCapacity() <= 0;
-        },
-        target: (creep) => {
-            const creepTask = creep.memory['creepTask'];
-            const targetID = creepTask.targetInfo.id;
-            let target;
-            if (targetID) {
-                // @ts-ignore
-                target = Game.getObjectById(targetID);
-                if (!target || target.structureType !== STRUCTURE_EXTENSION || target.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
-                    //creep.memory['task']['target'] = null;
-                    creepTask.targetInfo.id = null;
-                    //creep.memory['sendTaskRequest'] = false;
-                    target = undefined;
+        return act;
+    }
+    // get highest priority spawnTask
+    getSpawnTask() {
+        //return this.rootMem['spawnTask'];
+        for (let priority in this.rootMem['spawnTask']) {
+            if (Object.keys(this.rootMem['spawnTask'][priority]).length > 0) {
+                //return this.rootMem['spawnTask'][priority];
+                // return the first element in the object
+                for (let creepName in this.rootMem['spawnTask'][priority]) {
+                    const bodyModel = this.rootMem['spawnTask'][priority][creepName]['body'];
+                    return {
+                        creepName: creepName,
+                        creepBody: this.getBody(bodyModel),
+                        creepMemory: this.rootMem['spawnTask'][priority][creepName]['creepMemory'],
+                    };
                 }
             }
-            // 没缓存就重新获取
-            if (!target) {
-                // 获取有需求的建筑
-                target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-                    // extension 中的能量没填满
-                    filter: s => ((s.structureType == STRUCTURE_EXTENSION || s.structureType == STRUCTURE_SPAWN) && (s.store.getFreeCapacity(RESOURCE_ENERGY) > 0))
-                });
-                if (!target) {
-                    // 都填满了，任务完成
-                    const logisticStation = new LogisticWorkStation(creep.memory['roomName'], creep.memory['workStationID']);
-                    logisticStation.removeTemporalTask(creepTask.taskID);
-                    creepTask.taskID = null;
-                    return true;
-                }
-                // 写入缓存
-                //creep.memory['task']['target'] = target.id
-                creepTask.targetInfo.id = target.id;
+        }
+        return null;
+    }
+    removeSpawnTask(creepName) {
+        for (let priority in this.rootMem['spawnTask']) {
+            if (this.rootMem['spawnTask'][priority][creepName]) {
+                delete this.rootMem['spawnTask'][priority][creepName];
+                break;
             }
-            creep.moveTo(target.pos);
-            const result = creep.transfer(target, RESOURCE_ENERGY);
-            if (result === ERR_NOT_ENOUGH_RESOURCES || result === ERR_FULL)
-                return true;
-            else if (result != OK && result != ERR_NOT_IN_RANGE)
-                creep.say(`拓展填充 ${result}`);
-            if (creep.store[RESOURCE_ENERGY] === 0)
-                return true;
-            return false;
-        }
-    },
-    MOVE: {
-        source: (creep) => {
-            creep.say('💤');
-            return false;
-        },
-        target: (creep) => {
-            return false;
-        }
-    },
-    TRANSFER: {
-        source: (creep) => {
-            return false;
-        },
-        target: (creep) => {
-            return false;
-        }
-    },
-    WITHDRAW: {
-        source: (creep) => {
-            return creep.store.getFreeCapacity() <= 0;
-        },
-        target: (creep) => {
-            return false;
         }
     }
-};
-
-const creepWork = Object.assign(Object.assign({}, harvesterRole), transporterRole
-// ...workerRoles
-);
-
-class CreepExtension extends Creep {
-    //public work(data: SourceTargetData, role: string): void
-    work() {
-        //let data: SourceTargetData = {"target": "aaa", "source": "ddd"};
-        //const config: ICreepConfig = worker['builder'](s);
-        if (this.spawning)
-            return;
-        //---------------- GET CREEP LOGIC --------------------
-        //console.log(this.memory['role']);
-        //console.log(this.memory['data'])
-        const creepLogic = creepWork[this.memory['role']](this.memory['creepTask']); ////////////////////////
-        //const creepLogic = roles[role](data);
-        // ------------------------ 第二步：执行 creep 准备阶段 ------------------------
-        // 没准备的时候就执行准备阶段
-        if (!this.memory['ready']) {
-            // 有准备阶段配置则执行
-            if (creepLogic.prepare)
-                this.memory['ready'] = creepLogic.prepare(this);
-            // 没有就直接准备完成
-            else
-                this.memory['ready'] = true;
+    getSpawnID() {
+        return this.rootMem['spawnId'];
+    }
+    /***************** SETTER *****************/
+    addSpawnID(spawnID) {
+        this.rootMem['spawnId'].push(spawnID);
+    }
+    removeSpawnID(spawnID) {
+        const index = this.rootMem['spawnID'].indexOf(spawnID);
+        if (index > -1) {
+            this.rootMem['spawnId'].splice(index, 1);
         }
-        // ------------------------ 第三步：执行 creep 工作阶段 ------------------------
-        let stateChange = true;
-        // 执行对应阶段
-        // 阶段执行结果返回 true 就说明需要更换 working 状态
-        if (this.memory['working']) {
-            if (creepLogic.target)
-                stateChange = creepLogic.target(this);
-        }
-        else {
-            if (creepLogic.source)
-                stateChange = creepLogic.source(this);
-        }
-        // 状态变化了就切换工作阶段
-        if (stateChange)
-            this.memory['working'] = !this.memory['working'];
+    }
+    addSpawnTask(creepName, creepSpawnConfig) {
+        const priority = creepSpawnConfig.priority;
+        this.rootMem['spawnTask'][priority][creepName] = {
+            body: creepSpawnConfig.body,
+            creepMemory: creepSpawnConfig.creepMemory,
+        };
+    }
+    getOrderList() {
+        return this.rootMem['order'];
+    }
+    // get first order in the list but do not delete it
+    getOrder() {
+        return this.rootMem['order'][0];
+    }
+    // delete the first order in the list
+    removeOrder() {
+        this.rootMem['order'].shift();
     }
 }
 
-var mountExtensions = () => {
-    assignPrototype(RoomPosition, ExtendRoomPosition);
-    assignPrototype(Creep, CreepExtension);
-};
+class Station {
+    constructor(roomName, stationType) {
+        this.roomName = roomName;
+        this.id = stationType;
+    }
+    run() {
+        this.executeOrder();
+        //this.updateData();
+        this.maintenance();
+    }
+    addOrder(order) {
+        this.rootObject['order'].push(order);
+    }
+    /***************** UTILS *****************/
+    getRandomName() {
+        return this.id + '_' + Math.random().toString(36).substr(2, 8).toUpperCase();
+    }
+    // check if creepName is repeated
+    checkCreepName(creepName) {
+        const creepList = Game.creeps;
+        for (let name in creepList) {
+            if (name === creepName)
+                return false;
+        }
+        return true;
+    }
+    sendCreepSpawnTask(creepName, spawnConfig) {
+        const spawnMem = new CreepSpawnMem(this.roomName);
+        spawnMem.addSpawnTask(creepName, spawnConfig);
+    }
+    renewCreeps() {
+        let mem = this.rootObject;
+        const creepDeadTick = mem['creepDeadTick'];
+        const creepConfig = mem['creepConfig'];
+        for (let creepName in creepDeadTick) {
+            if (creepDeadTick[creepName] != null)
+                if (creepDeadTick[creepName] <= Game.time) {
+                    this.sendCreepSpawnTask(creepName, creepConfig);
+                    creepDeadTick[creepName] = null;
+                }
+        }
+    }
+    getCreepNum() {
+        return Object.keys(this.rootObject['creepDeadTick']).length;
+    }
+}
 
-// 游戏入口函数
+class HarvestStationMem {
+    constructor(roomName, stationType) {
+        this.roomName = roomName;
+        this.rootMem = Memory['colony'][roomName]['dpt_harvest'][stationType];
+    }
+    /***************** CONSULTER *****************/
+    getCreepConfig() {
+        return this.rootMem['creepConfig'];
+    }
+    getCreepDeadTick() {
+        return this.rootMem['creepDeadTick'];
+    }
+    getOrder() {
+        return this.rootMem['order'];
+    }
+    getUsage() {
+        return this.rootMem['usage'];
+    }
+    updateUsage(targetInfo) {
+        this.rootMem['usage']['targetInfo'] = targetInfo;
+    }
+    getTask() {
+        return this.rootMem['task'];
+    }
+}
+
+/***
+ creepDeadTick: {[creepName: string]: number};      // changes: maintenance & new extensions/spawn built
+ creepConfig: CreepSpawnConfig;                     // new extensions/spawn built
+ order: {name: HarvestStationOrder, data: {}}[];    // executeOrder
+
+ usage: {                                           // new structure build
+    sourceInfo: ID_Room_position;
+    targetInfo: ID_Room_position;
+ }
+
+ task: [number, number, number][];                  // when body changes
+
+ */
+// We can set two types of update data orders:
+// 1. updateBuilding: when a new structure is built
+// 2. updateAvailableEnergy: when a new extension/spawn is built
+class HarvestStation extends Station {
+    constructor(roomName, stationType) {
+        super(roomName, stationType);
+        this.access_memory = new HarvestStationMem(roomName, stationType);
+        this.rootObject = Memory['colony'][roomName]['dpt_harvest'][stationType];
+    }
+    executeOrder() {
+        //get order list
+        const orderList = this.access_memory.getOrder();
+        const order = orderList[0];
+        if (order) {
+            switch (order.name) {
+                case 'ADD_CREEP':
+                    this.addCreep();
+                    break;
+                case 'REMOVE_CREEP':
+                    this.removeCreep(order.data);
+                    break;
+                case 'UPDATE_BUILDING_INFO':
+                    this.updateBuildingInfo(order.data);
+                    break;
+                case 'SEARCH_BUILDING_TASK':
+                    this.searchBuildingTask();
+                    break;
+                case 'UPDATE_CREEP_NUM':
+                    this.updateCreepNum();
+                    break;
+            }
+        }
+    }
+    updateCreepNum() {
+        // get creepNum
+        const creepNum = this.getCreepNum();
+        // get creepConfig
+        this.access_memory.getCreepConfig();
+        // get creepDeadTick
+        const creepDeadTick = this.access_memory.getCreepDeadTick();
+        // get task
+        const task = this.access_memory.getTask();
+        // get usage
+        this.access_memory.getUsage();
+        // if creepNum < task.length
+        if (creepNum < task.length) {
+            // add creep
+            this.addCreep();
+        }
+        else if (creepNum > task.length) {
+            // remove creep
+            for (let creepName in creepDeadTick) {
+                if (creepDeadTick[creepName] < Game.time) {
+                    //this.sendCreepControlOrder('REMOVE_CREEP', {creepName: creepName});
+                    break;
+                }
+            }
+        }
+    }
+    maintenance() {
+        this.renewCreeps();
+    }
+    addCreep() {
+        // get no repeat creepName
+        let creepName;
+        do {
+            creepName = this.getRandomName();
+        } while (!this.checkCreepName(creepName));
+        //get creepConfig
+        const creepConfig = this.access_memory.getCreepConfig();
+        // send creepSpawnTask
+        this.sendCreepSpawnTask(creepName, creepConfig);
+    }
+    removeCreep(data) {
+        // remove creepDeadTick
+        const creepDeadTick = this.access_memory.getCreepDeadTick();
+        delete creepDeadTick[data.creepName];
+    }
+    updateBuildingInfo(data) {
+        this.access_memory.updateUsage(data.targetInfo);
+    }
+    searchBuildingTask() {
+    }
+}
+
+class CreepSpawning {
+    constructor(roomName) {
+        this.roomName = roomName;
+        this.access_memory = new CreepSpawnMem(roomName);
+    }
+    executeOrder() {
+        // get first order
+        const firstOrder = this.access_memory.getOrder();
+        if (firstOrder) {
+            switch (firstOrder.name) {
+                case 'UPDATE_BUILDING_INFO':
+                    this.updateBuildingInfo(firstOrder.data);
+                    break;
+                case 'SEARCH_BUILDING_TASK':
+                    this.searchBuildingTask();
+                    break;
+            }
+            // delete the first order
+            this.access_memory.removeOrder();
+        }
+    }
+    updateBuildingInfo(data) {
+        // if the data is a spawn, add to spawnID, else do nothing
+        // @ts-ignore
+        if (Game.getObjectById(data.targetInfo.id).structureType === 'spawn') {
+            this.access_memory.addSpawnID(data.targetInfo.id);
+        }
+    }
+    searchBuildingTask() {
+        const numSpawn = countStructure(this.roomName, 'spawn');
+        const numExtension = countStructure(this.roomName, 'extension');
+        const roomObject = Game.rooms[this.roomName];
+        CONTROLLER_STRUCTURES.spawn[roomObject.controller.level] - numSpawn;
+        CONTROLLER_STRUCTURES.extension[roomObject.controller.level] - numExtension;
+        // send spawn and extension build task
+        // ... WAIT TO IMPLEMENT BUILD DEPARTMENT
+    }
+    executeSpawnTask() {
+        const spawnTask = this.access_memory.getSpawnTask();
+        const spawnIDList = this.access_memory.getSpawnID();
+        // for each spawnID
+        for (let spawnID of spawnIDList) {
+            // get spawn
+            const spawn = Game.getObjectById(spawnID);
+            // if spawn is spawning, continue
+            if (spawn.spawning)
+                continue;
+            if (spawnTask) {
+                const creepName = spawnTask.creepName;
+                const creepBody = spawnTask.creepBody;
+                const creepMemory = spawnTask.creepMemory;
+                // spawn creep
+                const result = spawn.spawnCreep(creepBody, creepName, { memory: creepMemory });
+                if (result === OK) {
+                    // remove spawnTask
+                    this.access_memory.removeSpawnTask(creepName);
+                }
+            }
+        }
+    }
+    run() {
+        this.executeOrder();
+        this.executeSpawnTask();
+    }
+}
+
 function mount() {
-    MemHack.pretick();
+    MemHack.pretick(); //memory hack
     mountExtensions();
 }
-module.exports.loop = function () {
-    mount();
-    //let p: RoomPosition = new RoomPosition(5, 18, "W8N7");
-    let harvesterStation = new HarvesterWorkStation("W7N7", "source1");
-    // get reference for workStation o6vrzxlzq
-    //let t = new HarvesterWorkStation("W8N7", "o6vrzxlzg");
-    //let creepSpawning = new CreepSpawning("W8N7");
-    //console.log(t.getData())
-    //console.log(x)
-    if (Game.time % 10 == 10) {
-        let creepSpawning = new CreepSpawning("W7N7");
-        creepSpawning.addSpawnId('8142d46bff72e36');
+function runDptHarvest(roomName) {
+    const dptHarvestMem = Memory['colony'][roomName]['dpt_harvest'];
+    // for each harvest station
+    for (let stationName in dptHarvestMem) {
+        const harvestStation = new HarvestStation(roomName, stationName);
+        harvestStation.run();
     }
-    console.log(Game.time % 10);
-    if (Game.time % 10 == 10) {
-        harvesterStation.initializeHarvesterWorkStationAndSave('source2');
-        //harvesterStation.saveToMemory()
-        //console.log(harvesterStation.id)
-        let mem = harvesterStation.getMemObject();
-        console.log(mem.workPosition);
-        //mem.type = 'source2';
-        console.log(harvesterStation.getID());
-        console.log(mem.workPosition);
-        harvesterStation.addOrder('ADD_CREEP');
-        //harvesterStation.addOrder('DELETE_CREEP');
-        harvesterStation.executeOrder();
-        harvesterStation.run();
-    }
-    // creep spawning
-    let creepSpawning = new CreepSpawning("W7N7");
+}
+function runCreepSpawning(roomName) {
+    Memory['colony'][roomName]['creepSpawning'];
+    const creepSpawning = new CreepSpawning(roomName);
     creepSpawning.run();
-    for (let creep of Object.values(Game.creeps)) {
-        creep['work']();
+}
+function runDpt() {
+    const colonyMem = Memory['colony'];
+    // for each room in colony
+    for (let roomName in colonyMem) {
+        runDptHarvest(roomName);
+        runCreepSpawning(roomName);
     }
-    /*
-    mScreeps.createColony('W7N7');
-
-
-     */
+}
+module.exports.loop = function () {
+    runDpt();
+    mount();
 };
 
 exports.mount = mount;
+exports.runCreepSpawning = runCreepSpawning;
+exports.runDpt = runDpt;
+exports.runDptHarvest = runDptHarvest;
 //# sourceMappingURL=main.js.map
