@@ -1,24 +1,4 @@
 
-export const energyAvailable = [300, 550, 800, 1300, 1800, 2300, 5600, 10000]
-export function getEnergyRCL(energyAmount: number): number {
-
-    /*
-    let found = false;
-    let i = 0;
-    while( !found && i < 8) {
-        if (energyAvailable[i] > energyAmount) return i;
-        ++i;
-    }
-    return -1;
-    */
-    let found = false;
-    let i = 0;
-    while (!found && i < 8) {
-        if (energyAvailable[i] > energyAmount) return i;
-        ++i;
-    }
-    return 8;
-}
 
 export function countStructure(room: string, structureType: StructureConstant): number {
     return Game.rooms[room].find(FIND_STRUCTURES, {

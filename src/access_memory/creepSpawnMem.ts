@@ -62,7 +62,8 @@ export class CreepSpawnMem {
         }
     }
 
-    getSpawnID(): string {
+
+    getSpawnID(): string[] {
         return this.rootMem['spawnId'];
     }
 

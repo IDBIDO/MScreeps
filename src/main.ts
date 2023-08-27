@@ -4,6 +4,8 @@ import MemHack from "./external_modules/MemHack"
 import * as SuperMove from "./external_modules/SuperMove"
 import {HarvestStation} from "@/stations/harvestStation";
 import {CreepSpawning} from "@/creep/creepSpawing";
+import {bodyProportion, bodyPrototype, getMaxSimpleBody} from "@/creep/creepBodyManager";
+import {HarvestStationMem} from "@/access_memory/harvestStationMem";
 
 
 export function mount() {
@@ -38,9 +40,15 @@ export function runDpt() {
     }
 }
 
+export function test(){
+    const harvestMem = new HarvestStationMem('W7N7', 'source1');
+    console.log(harvestMem.getOrder());
+    harvestMem.removeOrder();
+}
+
 module.exports.loop = function() {
+    mount();
 
     runDpt();
 
-    mount();
 }

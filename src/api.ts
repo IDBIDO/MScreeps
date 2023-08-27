@@ -6,7 +6,9 @@ global.api = {
 
         iniColony(roomName);
         return 'Colony ' + roomName  + ' created';
-    }
+    },
+
+
 }
 
 export function nothing(): number {

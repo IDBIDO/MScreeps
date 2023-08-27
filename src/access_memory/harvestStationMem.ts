@@ -8,6 +8,7 @@ export class HarvestStationMem {
     constructor(roomName: string, stationType: HarvestStationType) {
         this.roomName = roomName;
         this.rootMem = Memory['colony'][roomName]['dpt_harvest'][stationType];
+        this.stationType = stationType;
     }
 
     /***************** CONSULTER *****************/
@@ -39,9 +40,21 @@ export class HarvestStationMem {
         return this.rootMem['task'];
     }
 
+    private getContainerReference(opt: "container_source1" | "container_source2" | "container_mineral"): number {
+        return Memory['colony'][this.roomName]['roomPlanning']['containerReference'][opt];
+    }
+
+    getContainerPos(opt: "container_source1" | "container_source2" | "container_mineral"): [number, number] {
+        const containerReference = this.getContainerReference(opt);
+        return Memory['colony'][this.roomName]['roomPlanning']['model']['container'][containerReference]['pos'];
+    }
+
+    removeOrder(): void {
+
+        this.rootMem['order'].shift();
 
 
-    
+    }
 
 
 

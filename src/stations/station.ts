@@ -2,7 +2,7 @@ import {CreepSpawnMem, creepSpawnMem} from "@/access_memory/creepSpawnMem";
 
 export abstract class Station {
 
-    id: string;
+    stationType: string;
     roomName: string;
     departmentName: DepartmentName;
 
@@ -13,7 +13,7 @@ export abstract class Station {
 
     protected constructor(roomName: string,  stationType: StationType) {
         this.roomName = roomName;
-        this.id = stationType;
+        this.stationType = stationType;
 
     }
 
@@ -22,8 +22,11 @@ export abstract class Station {
 
 
     public run() {
+
         this.executeOrder();
         //this.updateData();
+
+
         this.maintenance();
     }
 
@@ -34,7 +37,7 @@ export abstract class Station {
     /***************** UTILS *****************/
 
     protected getRandomName(): string {
-        return this.id + '_' + Math.random().toString(36).substr(2, 8).toUpperCase();
+        return this.stationType + '_' + Math.random().toString(36).substr(2, 8).toUpperCase();
     }
 
     // check if creepName is repeated

@@ -1,5 +1,6 @@
 import {CreepSpawnMem} from "@/access_memory/creepSpawnMem";
 import {countStructure} from "@/utils";
+import {bodyPrototype} from "@/creep/creepBodyManager";
 
 export class CreepSpawning {
 
@@ -53,27 +54,46 @@ export class CreepSpawning {
 
     }
 
+    private transformBodyFormat(bodyModel: { [key in BodyPartConstant]?: number }) {
+        const body: BodyPartConstant[] = [];
+        for (let bodyPart in bodyModel) {
+            for (let i = 0; i < bodyModel[bodyPart]; i++) {
+                body.push(bodyPart as BodyPartConstant);
+            }
+        }
+        return body;
+    }
+
     private executeSpawnTask(): void {
         const spawnTask = this.access_memory.getSpawnTask();
         const spawnIDList = this.access_memory.getSpawnID();
 
         // for each spawnID
         for (let spawnID of spawnIDList) {
+
             // get spawn
             const spawn = Game.getObjectById(spawnID as Id<StructureSpawn>)
 
             // if spawn is spawning, continue
-            if (spawn.spawning) continue;
-            if (spawnTask) {
-                const creepName = spawnTask.creepName;
-                const creepBody = spawnTask.creepBody;
-                const creepMemory = spawnTask.creepMemory;
+            if (!spawn.spawning) {
+                if (spawnTask) {
 
-                // spawn creep
-                const result = spawn.spawnCreep(creepBody, creepName, {memory: creepMemory});
-                if (result === OK) {
-                    // remove spawnTask
-                    this.access_memory.removeSpawnTask(creepName);
+                    const creepName = spawnTask.creepName;
+
+                    //this.transformBodyFormat(spawnTask.creepBody)
+                    const creepBody = spawnTask.creepBody;
+
+
+                    // print type of creepBody
+                    const creepMemory = spawnTask.creepMemory;
+
+                    // spawn creep
+                    const result = spawn.spawnCreep(creepBody, creepName, {memory: creepMemory});
+                    if (result === OK) {
+                        // remove spawnTask
+                        this.access_memory.removeSpawnTask(creepName);
+                    }
+
                 }
             }
 

@@ -61,14 +61,14 @@ type SpawnTaskSet = {[creepName: string]: SpawnTask}
 type SpawnTask = {    body: bodyPart; creepMemory: CreepMemory; }
 
 interface bodyPart {
-    MOVE?: number;
-    WORK?: number;
-    CARRY?: number;
-    ATTACK?: number;
-    RANGED_ATTACK?: number;
-    HEAL?: number;
-    CLAIM?: number;
-    TOUGH?: number;
+    move?: number;
+    work?: number;
+    carry?: number;
+    attack?: number;
+    ranged_attack?: number;
+    heal?: number;
+    claim?: number;
+    tough?: number;
 }
 
 /***************************************************

@@ -18,8 +18,9 @@ export function iniStationHarvest(roomName: string, stationName: string) {
     let iniMem: HarvestStationMemory = {
         creepConfig: {
             body: {
-                MOVE: 2,
-                WORK: 1,
+                work: 2,
+                carry: 1,
+                move: 1,
             },
             priority: 1,
             creepMemory: {
