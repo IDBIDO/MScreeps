@@ -53,6 +53,8 @@ export class CreepSpawnMem {
 
     }
 
+
+
     removeSpawnTask(creepName: string): void {
         for (let priority in this.rootMem['spawnTask']) {
             if (this.rootMem['spawnTask'][priority][creepName]) {

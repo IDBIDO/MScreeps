@@ -1,3 +1,4 @@
+import {bodyComponentNumDefault} from "../../src_old/creep/creepBody";
 
 
 export const bodyPrototype = {
@@ -61,7 +62,6 @@ export function getMaxSimpleBody(role: CreepRole,  roomName: string): BodyPartCo
     }
     return body;
 }
-
 
 
 

@@ -64,6 +64,15 @@ export class CreepSpawning {
         return body;
     }
 
+    private sendCreepDeadTick(creepName: string, departmentName: DepartmentName, stationType: string, bodyNum: number): void {
+
+        const spawnTime = bodyNum * 3;
+        const creepDeadTickMem = Memory['colony'][this.roomName][departmentName][stationType]['creepDeadTick'];
+        const creepDeadTick = Game.time + 1501 + spawnTime;
+        creepDeadTickMem[creepName] = creepDeadTick;
+        console.log('sendCreepDeadTick: ' + creepName + ' ' + creepDeadTick);
+    }
+
     private executeSpawnTask(): void {
         const spawnTask = this.access_memory.getSpawnTask();
         const spawnIDList = this.access_memory.getSpawnID();
@@ -85,20 +94,24 @@ export class CreepSpawning {
 
 
                     // print type of creepBody
-                    const creepMemory = spawnTask.creepMemory;
-
+                    const creepMemoryModel = spawnTask.creepMemory;
+                    const creepMemory = JSON.parse(JSON.stringify(creepMemoryModel));
                     // spawn creep
                     const result = spawn.spawnCreep(creepBody, creepName, {memory: creepMemory});
                     if (result === OK) {
+
+                        // set creepDeadTick
+                        this.sendCreepDeadTick(creepName, creepMemory.departmentName, creepMemory.workStationID, creepBody.length);
+
                         // remove spawnTask
                         this.access_memory.removeSpawnTask(creepName);
+
                     }
 
                 }
             }
 
         }
-
 
     }
 

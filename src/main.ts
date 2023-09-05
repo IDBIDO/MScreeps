@@ -6,6 +6,8 @@ import {HarvestStation} from "@/stations/harvestStation";
 import {CreepSpawning} from "@/creep/creepSpawing";
 import {bodyProportion, bodyPrototype, getMaxSimpleBody} from "@/creep/creepBodyManager";
 import {HarvestStationMem} from "@/access_memory/harvestStationMem";
+import {RealiseLogisticOrder} from "@/stations/realiseLogisticOrder";
+import {LogisticStation} from "@/stations/logisticStation";
 
 
 export function mount() {
@@ -30,14 +32,22 @@ export function runCreepSpawning(roomName: string) {
     creepSpawning.run();
 }
 
+export function runDptLogistic(roomName: string) {
+    const realiseLogisticOrders = new RealiseLogisticOrder(roomName);
+    realiseLogisticOrders.run();
+    const logisticStation = new LogisticStation(roomName, "internal_transport");
+    logisticStation.run();
+}
+
 export function runDpt() {
     const colonyMem = Memory['colony'];
     // for each room in colony
     for (let roomName in colonyMem) {
         runDptHarvest(roomName);
+        runDptLogistic(roomName);
         runCreepSpawning(roomName);
-
     }
+
 }
 
 export function test(){
@@ -46,9 +56,27 @@ export function test(){
     harvestMem.removeOrder();
 }
 
+export function runHarvestCreep() {
+    for (let creep of Object.values(Game.creeps)) {
+        if (creep.memory.departmentName == 'dpt_harvest')
+        creep['work']();
+    }
+}
+
+export function runLogisticCreep() {
+    for (let creep of Object.values(Game.creeps)) {
+        if (creep.memory.departmentName == 'dpt_logistic')
+            creep['work']();
+    }
+}
+
 module.exports.loop = function() {
+
     mount();
-
+    //return;
     runDpt();
+    runHarvestCreep();
+    runLogisticCreep();
 
+    //api.createColony("W7N7");
 }

@@ -33,12 +33,13 @@ export function iniStationHarvest(roomName: string, stationName: string) {
                 workStationID: stationName,
                 departmentName: "dpt_harvest",
                 roomName: roomName,
+                task: null
             }
         },
         creepDeadTick: {},
         order: [],
         task: [],
-        usage: {sourceInfo: sourceID_Room_position, targetInfo: {id: null, roomName: null, pos: null}}
+        usage: {sourceInfo: sourceID_Room_position, targetInfo: {id: null, roomName: roomName, pos: null}}
 
     }
 
@@ -50,6 +51,18 @@ export function iniStationHarvest(roomName: string, stationName: string) {
             iniMem.task.push([auxPos.x, auxPos.y, 0]);
 
     }
+    const containerReference = Memory['colony'][roomName]['roomPlanning']['containerReference']["container_" + stationName];
+    const containerPos: [number, number] = Memory['colony'][roomName]['roomPlanning']['model']['container'][containerReference]['pos'];
+    // search in iniMem.task for containerPos and make it the first element
+    for (let i = 0; i < iniMem.task.length; ++i) {
+        if (iniMem.task[i][0] == containerPos[0] && iniMem.task[i][1] == containerPos[1]) {
+            let aux = iniMem.task[0];
+            iniMem.task[0] = iniMem.task[i];
+            iniMem.task[i] = aux;
+            break;
+        }
+    }
+
     Memory['colony'][roomName]['dpt_harvest'][stationName] = iniMem;
 
 }
@@ -58,7 +71,7 @@ export function iniDptHarvest(roomName: string) {
     Memory['colony'][roomName]['dpt_harvest'] = {};
     iniStationHarvest(roomName, 'source1');
     iniStationHarvest(roomName, 'source2');
-    iniStationHarvest(roomName, 'mineral');
+    //iniStationHarvest(roomName, 'mineral');
     //iniStationHarvest(roomName, 'highway');
 
 }

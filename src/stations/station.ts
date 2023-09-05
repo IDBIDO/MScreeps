@@ -69,6 +69,18 @@ export abstract class Station {
         }
     }
 
+    private resetCreepStatus(creep: Creep): void {
+        creep.memory.ready = false;
+        creep.memory.working = false;
+    }
+
+    protected creepWaitingToSpawn(creepName: string):boolean {
+        let mem = this.rootObject;
+        const creepDeadTick: {[creepName: string]: number} = mem['creepDeadTick'];
+        return creepDeadTick[creepName] == null;
+
+    }
+
     public getCreepNum(): number {
         return Object.keys(this.rootObject['creepDeadTick']).length;
     }

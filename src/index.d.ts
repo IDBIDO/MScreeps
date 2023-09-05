@@ -41,7 +41,7 @@ type StructureType = 'spawn' |  'link' | 'tower' | 'storage' | 'terminal' | 'lab
     'controller' | 'powerBank' | 'extractor' | 'factory' |
     'powerSpawn' | 'extension';
 
-type DepartmentName = 'dpt_harvest'| 'dpt_logistic'| 'dpt_build'| 'dpt_upgrade'| 'dpt_repair'| 'creepSpawning'
+type DepartmentName = 'dpt_harvest'| 'dpt_logistic'| 'dpt_build'| 'dpt_upgrade'| 'dpt_repair'| 'creepSpawning' | 'dpt_miner';
 
 
 /***************************************************
@@ -86,8 +86,57 @@ interface CreepMemory {
     workStationID:  string;
     departmentName:  DepartmentName;
     roomName:  string;
+
+    task?: {
+        id: string;
+        type: 'MOVE' | 'TRANSFER' | 'WITHDRAW' | 'FILL';
+        status: 'InProcess' | 'Done' | 'Idle';
+
+    } | any;
 }
-type CreepRole = "harvester" | "transporter" | "builder" | "upgrader" | "repairer"
+type CreepRole = HarvesterRole | TransporterRole | BuilderRole //| UpgraderRole;
+    //"harvester" | "miner" |"transporter" | "builder" | "upgrader" | "repairer"
+
+type HarvesterRole = 'harvester' | 'miner';
+
+type TransporterRole = 'transporter';
+
+type BuilderRole = 'builder' | 'repairer';
+
+type UpgraderRole = 'upgrader';
+
+/***************************************************
+ *                 CREEP BEHAVIOUR                *
+ ***************************************************/
+
+type CreepWork = {
+    [role in CreepRole]: () => ICreepConfig
+}
+
+
+interface ICreepConfig {
+    /*
+    // 每次死后都会进行判断，只有返回 true 时才会重新发布孵化任务
+    isNeed?: (room: Room, creepName: string, preMemory: CreepMemory) => boolean;
+    // 准备阶段执行的方法, 返回 true 时代表准备完成
+    prepare?: (creep: Creep) => boolean;
+    // creep 获取工作所需资源时执行的方法
+    // 返回 true 则执行 target 阶段，返回其他将继续执行该方法
+    */
+    prepare?: (creep: Creep) => boolean
+
+    boost?: (creep: Creep) => boolean;
+
+
+    source: (creep: Creep) => boolean;
+    // creep 工作时执行的方法,
+    // 返回 true 则执行 source 阶段，返回其他将继续执行该方法
+    target: (creep: Creep) => boolean;
+
+    // 每个角色默认的身体组成部分
+    //bodys: BodyPartConstant[];
+}
+
 
 /***************************************************
  *                      STATION                     *
@@ -112,7 +161,7 @@ type GeneralOrder = 'UPDATE_BUILDING_INFO' | 'SEARCH_BUILDING_TASK' | 'UPDATE_CR
 
 type CreepControlOrder = 'ADD_CREEP' | 'REMOVE_CREEP' | GeneralOrder;
 
-type StationType = HarvestStationType;
+type StationType = HarvestStationType | LogisticStationType
 
 /***************************************************
  *                 HARVEST STATION                 *
@@ -132,6 +181,42 @@ interface HarvestStationMemory extends StationMemory {
 type HarvestStationOrder = CreepControlOrder;
 
 type HarvestStationType = 'source1' | 'mineral' | 'source2' | 'highway';
+
+
+/***************************************************
+ *                 LOGISTIC STATION                *
+ ***************************************************/
+interface LogisticStationMemory extends StationMemory {
+    order: {name: CreepControlOrder, data: {}}[];
+    storageId: string;
+
+    fillTask: string;
+    task: {
+        MOVE: {
+            [id: string]: TransporterTaskData
+        },
+        TRANSFER: {
+            [id: string]: TransporterTaskData
+        },
+        WITHDRAW: {
+            [id: string]: TransporterTaskData
+        },
+    }
+}
+
+type LogisticStationType = 'internal_transport';
+
+
+interface TransporterTaskData {
+    stationId: string;
+    stationDpt: DepartmentName;
+    taskType: 'MOVE' | 'TRANSFER' | 'WITHDRAW' | 'FILL'
+    amount:  number;
+    resourceType:  ResourceConstant;
+    taskObjectInfo?: ID_Room_position;
+    creepName: string;
+    creepList?: string[];   // only for move task
+}
 
 /***************************************************
  *                 UTILS TYPE                      *

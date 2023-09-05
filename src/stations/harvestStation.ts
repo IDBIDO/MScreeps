@@ -47,27 +47,31 @@ export class HarvestStation extends Station{
                 case 'ADD_CREEP':
                     this.addCreep();
                     //console.log("add creep")
+                    this.access_memory.removeOrder();
                     break;
                 case 'REMOVE_CREEP':
                     this.removeCreep(order.data as {creepName: string});
+                    this.access_memory.removeOrder();
                     break;
                 case 'UPDATE_BUILDING_INFO':
                     this.updateBuildingInfo(order.data as {targetInfo: ID_Room_position});
+                    this.access_memory.removeOrder();
                     break;
                 case 'SEARCH_BUILDING_TASK':
-                    this.searchBuildingTask();
+                    const a = this.searchBuildingTask();
 
-                    //this.access_memory.removeOrder();
+                    if (a) this.access_memory.removeOrder();
 
                     break;
                 case 'UPDATE_CREEP_NUM':
                     this.updateCreepNum();
+                    this.access_memory.removeOrder();
                     break;
                 default:
                     break;
             }
             // delete executed order
-            this.access_memory.removeOrder();
+            ///this.access_memory.removeOrder();
             //Memory['colony'][this.roomName]['dpt_harvest'][this.stationType]['order'] = []
 
 
@@ -96,7 +100,7 @@ export class HarvestStation extends Station{
             }
         } else if (actualCreepNum < creepNeeded) {
             // if actualCreepNum < creepNeeded, send ADD_CREEP order
-            while (actualCreepNum < creepNeeded && actualCreepNum <= taskNum) {
+            while (actualCreepNum < creepNeeded && actualCreepNum < taskNum) {
                 orderManager.sendOrder('ADD_CREEP', {}, 'dpt_harvest', this.stationType as HarvestStationType);
                 actualCreepNum++;
             }
@@ -104,10 +108,80 @@ export class HarvestStation extends Station{
     }
 
     maintenance(): void {
+        this.checkDeadCreep();
         this.renewCreeps();
         this.checkContainerConstructionSide();
-
+        this.checkCreepTask();
     }
+
+    private checkDeadCreep() {
+        const creepDeadTickList = this.access_memory.getCreepDeadTick();
+        for (let creepName in creepDeadTickList) {
+            const creep = Game.creeps[creepName];
+            if (!creep && creepDeadTickList[creepName] != null) {
+                // unset creep task
+                const task = Memory.creeps[creepName].task;
+                if (task) {
+                    this.unSetTaskOccupied(task);
+                }
+
+            }
+        }
+    }
+
+
+    private getFreeTask(): [number, number, number] {
+        const taskList = this.access_memory.getTask();
+        for (let i = 0; i < taskList.length; ++i) {
+            if (taskList[i][2] == 0) {
+                return [taskList[i][0], taskList[i][1], 1]
+            }
+        }
+        return null;
+    }
+
+    private setTaskOccupied(task: [number, number, number]): void {
+        const taskList = this.access_memory.getTask();
+        for (let i = 0; i < taskList.length; ++i) {
+            if (taskList[i][0] == task[0] && taskList[i][1] == task[1]) {
+                taskList[i][2] = 1;
+                return;
+            }
+        }
+    }
+
+    private unSetTaskOccupied(task: [number, number, number]): void {
+        const taskList = this.access_memory.getTask();
+        for (let i = 0; i < taskList.length; ++i) {
+            if (taskList[i][0] == task[0] && taskList[i][1] == task[1]) {
+                taskList[i][2] = 0;
+                return;
+            }
+        }
+    }
+
+
+    private checkCreepTask(): void {
+        //console.log(this.getFreeTask())
+        const creepDeadTickList = this.access_memory.getCreepDeadTick();
+        for (let creepName in creepDeadTickList) {
+            if(creepDeadTickList[creepName] && creepDeadTickList[creepName] > Game.time) {
+                const creep = Game.creeps[creepName];
+                if (creep) {
+                    const task = creep.memory.task as number[];
+                    if (task == null) {
+                        const freeTask = this.getFreeTask();
+                        if (freeTask) {
+                            creep.memory.task = freeTask;
+                            this.setTaskOccupied(freeTask);
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
 
     private addCreep(): void {
         // get no repeat creepName
@@ -118,6 +192,9 @@ export class HarvestStation extends Station{
 
         //get creepConfig
         const creepConfig = this.access_memory.getCreepConfig();
+        const creepDeadTick = this.access_memory.getCreepDeadTick();
+        creepDeadTick[creepName] = null;
+
         // send creepSpawnTask
         this.sendCreepSpawnTask(creepName, creepConfig);
     }
@@ -125,7 +202,13 @@ export class HarvestStation extends Station{
     private removeCreep(data: {creepName: string}): void {
         // remove creepDeadTick
         const creepDeadTick = this.access_memory.getCreepDeadTick();
+        // unset creep task
+        const creepTask = Memory.creeps[data.creepName].task;
+        if (creepTask) {
+            this.unSetTaskOccupied(creepTask);
+        }
         delete creepDeadTick[data.creepName];
+        delete Memory.creeps[data.creepName];
     }
 
     private updateBuildingInfo(data: {targetInfo: ID_Room_position}): void {
@@ -142,7 +225,7 @@ export class HarvestStation extends Station{
                 // search if there is a container in position targetInfo.pos
                 const container = Game.rooms[this.roomName].lookForAt(LOOK_STRUCTURES, targetInfo.pos[0], targetInfo.pos[1]);
                 // if yes, add container id to targetInfo.id
-                if (container.length === 0) {
+                if (container.length > 0) {
                     targetInfo.id = container[0].id;
                 }
             }
@@ -150,21 +233,46 @@ export class HarvestStation extends Station{
 
     }
 
-    private searchBuildingTask(): void {
+    private searchBuildingTask(): boolean {
         const targetInfo = this.access_memory.getUsage().targetInfo;
-
+        let orderComplete = false;
         // TODO: change target to link if we can build a link
 
         if (targetInfo.id == null) {
+
             // create container construction site
             const containerReferenceOpt = "container_" + this.stationType;
             // @ts-ignore
             const containerPos = this.access_memory.getContainerPos(containerReferenceOpt);
+
+            const aux = this.access_memory
+
+            const constructionSide = Game.rooms[this.roomName].lookAt(containerPos[0], containerPos[1]);
+
+            constructionSide.forEach(function(lookObject) {
+                if( lookObject.type == LOOK_CONSTRUCTION_SITES) {
+                    aux.updateUsage({id: lookObject[LOOK_CONSTRUCTION_SITES].id,
+                        pos: [lookObject[LOOK_CONSTRUCTION_SITES].pos.x, lookObject[LOOK_CONSTRUCTION_SITES].pos.y],
+                    roomName: lookObject[LOOK_CONSTRUCTION_SITES].room.name})
+
+
+                    orderComplete = true;
+                }
+                if (lookObject.type == LOOK_STRUCTURES) {
+                    aux.updateUsage({id: lookObject[LOOK_STRUCTURES].id,
+                        pos: [lookObject[LOOK_STRUCTURES].pos.x, lookObject[LOOK_STRUCTURES].pos.y],
+                        roomName: lookObject[LOOK_STRUCTURES].room.name})
+                    orderComplete = true;
+                }
+            });
+
+
+
             const result = Game.rooms[this.roomName].createConstructionSite(containerPos[0], containerPos[1], STRUCTURE_CONTAINER);
 
 
-
         }
+        return orderComplete
     }
 
 

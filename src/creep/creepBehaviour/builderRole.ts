@@ -31,9 +31,9 @@ export function checkTransferTaskSent(creep: Creep) {
 }
 
 const builderRole:{
-    [role in BuilderRole]: (data: {}) => ICreepConfig
+    [role in BuilderRole]: () => ICreepConfig
 } = {
-    builder: (data: BuilderTaskData): ICreepConfig => ({
+    builder: (): ICreepConfig => ({
 
         source: (creep: Creep): boolean => {
 

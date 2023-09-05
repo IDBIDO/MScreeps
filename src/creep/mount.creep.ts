@@ -16,7 +16,7 @@ export default class CreepExtension extends Creep {
 
 
 
-        const creepLogic = roles[this.memory['role']](this.memory['taskData'])  ////////////////////////
+        const creepLogic = roles[this.memory['role']]()  ////////////////////////
         //const creepLogic = roles[role](data);
 
 
