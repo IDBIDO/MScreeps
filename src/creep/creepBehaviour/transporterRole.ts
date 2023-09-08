@@ -345,14 +345,20 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
             else {
                 const storageId = logisticStationMem.getStorageId()
                 const storage = Game.getObjectById(storageId as Id<StructureStorage> | Id<StructureContainer> | Id<StructureSpawn>);
-                if (storage) {
+                if (storage && storage.store.getFreeCapacity(task.resourceType) > 250) {
+                    const targetStructure = Game.getObjectById(task.taskObjectInfo.id as Id<StructureStorage>);
+                    if (!targetStructure) {
+                        creep.memory.task.status = "Done";
+                        return false;
+                    }
                     // get max between task.amount and creep.store.getFreeCapacity(task.resourceType)
                     const amount = Math.min(task.amount, creep.store.getFreeCapacity(task.resourceType));
                     const r = creep.withdraw(storage, task.resourceType, amount);
                     if (r == ERR_NOT_IN_RANGE) creep.moveTo(storage);
 
                 } else {
-                    console.log(creep.memory.roomName + ': ERROR: no storage in logistic station')
+                    if (!storage)
+                        console.log(creep.memory.roomName + ': ERROR: no storage in logistic station')
                     creep.memory.task.status = "Done";
                     return false;
                 }
@@ -381,6 +387,10 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
                 return true;
             } else {
                 const targetStructure = Game.getObjectById(task.taskObjectInfo.id as Id<StructureStorage>);
+                if (!targetStructure) {
+                    creep.memory.task.status = "Done";
+                    return true;
+                }
                 const r = creep.transfer(targetStructure, task.resourceType);
                 if (r == ERR_NOT_IN_RANGE) { creep.moveTo(targetStructure); return false }
                 else if (r == OK) {

@@ -1,5 +1,6 @@
 import {HarvestStationMem} from "@/access_memory/harvestStationMem";
 import {LogisticStationMem} from "@/access_memory/logisticStationMem";
+import {BuildStationMem} from "@/access_memory/buildStationMem";
 
 export class RealiseLogisticOrder {
 
@@ -16,6 +17,7 @@ export class RealiseLogisticOrder {
     run() {
         this.checkHarvestStation("source1");
         this.checkHarvestStation("source2");
+        this.checkBuildStation("internal_build");
     }
 
     private createTask(taskType: "MOVE" | "WITHDRAW" | "TRANSFER", resourceType: ResourceConstant, stationDpt: DepartmentName,
@@ -30,6 +32,25 @@ export class RealiseLogisticOrder {
             taskType: taskType
 
         };
+    }
+
+    private checkBuildStation(stationType: BuildStationType) {
+        const buildMem = new BuildStationMem(this.roomName, stationType);
+        const creepDeadTick = Object.keys(buildMem.getCreepDeadTick());
+        //if (creepDeadTick.length == 0) return;
+        for (let i = 0; i < creepDeadTick.length; ++i) {
+            const creep = Game.creeps[creepDeadTick[i]];
+            if (creep && !this.mem.existTask(creepDeadTick[i], "TRANSFER") ) {
+                const creepInfo = {
+                    id: creep.id,
+                    pos: null,
+                    roomName: null
+                }
+                const aux = this.createTask("TRANSFER", "energy", "dpt_build",
+                    stationType, creepInfo, null);
+                this.mem.getTask().TRANSFER[creepDeadTick[i]] = aux;
+            }
+        }
     }
 
     private checkHarvestStation(stationType: HarvestStationType) {

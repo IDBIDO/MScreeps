@@ -81,6 +81,7 @@ export class LogisticStation extends Station{
                     break;
 
             }
+            this.access_memory.removeOrder();
 
         }
 
@@ -95,17 +96,53 @@ export class LogisticStation extends Station{
         // TODO IMPLEMENT SEARCH BUILDING TASK
         const rcl = Game.rooms[this.roomName].controller?.level;
         const storageId = this.access_memory.getStorageId();
+
+
         const storage = Game.getObjectById(storageId as Id<StructureStorage> |
             Id<StructureContainer> | Id<StructureSpawn>);
-            // if rcl >= 4, and storage is not type of StructureStorage
-        if (rcl >= 4 && storage.structureType !== 'storage') {
-          // send storage structure to building task
 
+        const roomPlanningMem = new RoomPlanningMem(this.roomName);
+        const storagePos = roomPlanningMem.getModel("storage")[0].pos;
+
+            // if rcl >= 4, and storage is not type of StructureStorage
+        const orderManage = new OrderManager(this.roomName);
+
+
+
+        if (rcl >= 4 && storage.structureType !== 'storage') {
+
+
+            // send storage structure to building task
+            const buildTaskData: BuildTaskData = {
+                id: null,
+                department: 'dpt_logistic',
+                stationType: 'internal_transport',
+                pos: storagePos,
+                roomName: this.roomName,
+                structureType: 'storage',
+                index: 0,
+            }
+            orderManage.sendOrder('ADD_BUILD_TASK', buildTaskData, 'dpt_build', 'internal_build');
         }
 
         else {
-            if (storage.structureType === 'spawn') {
+            const posObject = new RoomPosition(storagePos[0], storagePos[1], this.roomName);
+            const container = posObject.lookFor(LOOK_STRUCTURES).find(structure => structure.structureType === 'container');
+
+            if (!container) {
+
                 // send container structure to building task
+                const buildTaskData: BuildTaskData = {
+                    id: null,
+                    department: 'dpt_logistic',
+                    stationType: 'internal_transport',
+                    pos: storagePos,
+                    roomName: this.roomName,
+                    structureType: 'container',
+                    index: null,
+                }
+                orderManage.sendOrder('ADD_BUILD_TASK', buildTaskData, 'dpt_build', 'internal_build');
+
             }
 
         }
@@ -152,6 +189,8 @@ export class LogisticStation extends Station{
 
         this.checkStorageId();
 
+        this.fillCreepControl();
+
         this.assignFillTask();
         this.assignTask(this.access_memory.getTasksWithNullCreepName("WITHDRAW"), "WITHDRAW");
         this.assignTask(this.access_memory.getTasksWithNullCreepName("MOVE"), "MOVE");
@@ -169,8 +208,10 @@ export class LogisticStation extends Station{
         const storagePosObject = new RoomPosition(storagePos[0], storagePos[1], this.roomName);
         // const find storage in storage Pos
         const storage = storagePosObject.lookFor(LOOK_STRUCTURES).find(structure => structure.structureType === 'storage');
+
         if (storage) {
-            this.access_memory.updateStorageId(storage.id);
+            if (this.access_memory.getStorageId() !== storage.id)  this.access_memory.updateStorageId(storage.id);
+            else return;
         } // if no storage in storage Pos, find container in this pos
         else {
             const container = storagePosObject.lookFor(LOOK_STRUCTURES).find(structure => structure.structureType === 'container');
@@ -202,11 +243,12 @@ export class LogisticStation extends Station{
                 const creepTaskStatus = this.access_memory.getCreepTask(creepName);
                 // if task is Done, delete the task
                 if (creepTaskStatus.status === 'Done') {
-                    this.access_memory.updateCreepStatus(creepName, 'Idle')
+                    //this.access_memory.updateCreepStatus(creepName, 'Idle')
                     if (creepTaskStatus.type !== 'FILL') {
                         this.access_memory.removeTask(creepTaskStatus.type, creepTaskStatus.id);
                         //console.log("eliminateCompleteTask function: " + creepName + " " + creepTaskStatus.type + " " + creepTaskStatus.id)
                     }
+                    this.access_memory.updateCreepStatus(creepName, 'Idle')
                 }
             }
         }
@@ -236,7 +278,6 @@ export class LogisticStation extends Station{
             // if creep is dead, delete the creepDeadTick
             // creep no spawning AND creep no exist
             if (creepDeadTick[creepName] && creepDeadTick[creepName] < Game.time && Game.creeps[creepName] == null) {
-
 
                 const creepTaskStatus = this.access_memory.getCreepTask(creepName);
                 if (creepTaskStatus.status === 'InProcess' || creepTaskStatus.status === 'Done') {
@@ -320,12 +361,9 @@ export class LogisticStation extends Station{
         const getIdleCreepList = this.access_memory.getIdleCreepName();
         const task:{[id: string]: TransporterTaskData} = this.access_memory.getTask()[taskType];
         const taskNames = idleTaskId;
+
         let taskIndex = 0;
-
-
         let creepIndex = 0;
-
-
         while(creepIndex < getIdleCreepList.length && taskIndex < taskNames.length) {
             const creepName = getIdleCreepList[creepIndex];
             //console.log(creepName)
@@ -345,6 +383,22 @@ export class LogisticStation extends Station{
 
     }
 
+    private getMaxTicksToLiveIdleCreepName(): string {
+        const idleCreepNameList = this.access_memory.getIdleCreepName();
+        if (idleCreepNameList.length == 0) return null;
+        const creepDeadTick = this.access_memory.getCreepDeadTick();
+        let maxTicksToLive = 0;
+        let maxTicksToLiveCreepName = idleCreepNameList[0];
+        for (let i = 0; i < idleCreepNameList.length; ++i) {
+            if (creepDeadTick[idleCreepNameList[i]] > maxTicksToLive) {
+                maxTicksToLive = creepDeadTick[idleCreepNameList[i]];
+                maxTicksToLiveCreepName = idleCreepNameList[i];
+            }
+        }
+        return maxTicksToLiveCreepName;
+
+    }
+
     private fillCreepControl() {
         const creepDeadTick = this.access_memory.getCreepDeadTick();
         const idleCreepNameList = this.access_memory.getIdleCreepName();
@@ -353,26 +407,22 @@ export class LogisticStation extends Station{
 
         // there is no fill creep assigned
         if (!fillTaskCreepName) {
-            if (idleCreepNameList.length < 1) {
-            }
-            else {
-                this.access_memory.updateFillTaskCreepName(idleCreepNameList[0]);
-
-            }
+            const maxTicksToLiveCreepName = this.getMaxTicksToLiveIdleCreepName();
+            if (maxTicksToLiveCreepName)
+                this.access_memory.updateFillTaskCreepName(maxTicksToLiveCreepName);
 
         }
         // fill creep assigned
         else {
-
             // fill creep spawning
             if (creepDeadTick[fillTaskCreepName] == null) return
 
             // fill creep near to dead
-            if (creepDeadTick[fillTaskCreepName] <= 30) {
-                if (idleCreepNameList.length < 1) {
-                } else {
-                    this.access_memory.updateFillTaskCreepName(idleCreepNameList[0]);
-                }
+            const ticksToLive = creepDeadTick[fillTaskCreepName] - Game.time;
+            if (ticksToLive <= 200) {
+                const maxTicksToLiveCreepName = this.getMaxTicksToLiveIdleCreepName();
+                if (maxTicksToLiveCreepName)
+                    this.access_memory.updateFillTaskCreepName(maxTicksToLiveCreepName);
             }
 
         }
@@ -381,14 +431,6 @@ export class LogisticStation extends Station{
     }
 
     private creepNumControl() {
-
-
-        // const creepList1 = this.access_memory.getCreepDeadTick();
-        // //print creepList
-        // console.log("creepNumControl function:" + Object.keys(creepList1)[0] + " " + creepList1[Object.keys(creepList1)[0]]);
-        // if (creepList1[Object.keys(creepList1)[0]]) {
-        //     console.log( this.canTakeTask(Object.keys(creepList1)[0]));
-        // }
 
         const idleCreepNameList = this.access_memory.getIdleCreepName();
         if (idleCreepNameList.length > 0) return;
@@ -399,39 +441,21 @@ export class LogisticStation extends Station{
         const isSpawningCreep = Object.values(creepList).some(value => value == null);
         if (isSpawningCreep) return;
 
-        //no idle creep, no spawning creeps
-
-        const fillTaskCreepName = this.access_memory.getFillTaskCreepName();
-        //console.log("creepNumControl function:" + fillTaskCreepName)
-        const orderManager = new OrderManager(this.roomName);
-        if (!fillTaskCreepName) {
-            const creepName = this.addCreep();
-            this.access_memory.updateFillTaskCreepName(creepName);
-            console.log("creepNumControl function:" + fillTaskCreepName);
-
-            return;
-        }
-
-        const energyCapacity = Game.rooms[this.roomName].energyCapacityAvailable;
-        let minCreepNum = 1;
-        if (getEnergyRCL(energyCapacity) < 7) {
-            minCreepNum += 1;
-        }
-
-
         const creepNum = Object.keys(this.access_memory.getCreepDeadTick()).length
-        // if (creepNum < minCreepNum) {
-        //     this.addCreep();
-        //     return;
-        // }
 
         const withdrawTaskNum = Object.keys(this.access_memory.getTask().WITHDRAW).length
         const moveTaskNum = Object.keys(this.access_memory.getTask().MOVE).length
-        if (creepNum < withdrawTaskNum + moveTaskNum) this.addCreep();
 
         const transferTaskNum = Object.keys(this.access_memory.getTask().TRANSFER).length
-        // TODO MAYBE NEED TO TEST WITH CORRECT VALUES
 
+        const controlHeuristic = withdrawTaskNum + moveTaskNum + 1 + Math.floor(transferTaskNum / 3);
+        if (creepNum < controlHeuristic) { this.addCreep(); return;     }
+        else if (creepNum == controlHeuristic) {
+            const fillTaskCreepName = this.access_memory.getFillTaskCreepName();
+            const fillCreepDeadTick = this.access_memory.getCreepDeadTick()[fillTaskCreepName];
+            if (fillCreepDeadTick && fillCreepDeadTick - Game.time < 200) this.addCreep();
+        }
+        // TODO MAYBE NEED TO TEST WITH CORRECT VALUES
 
     }
 

@@ -88,7 +88,13 @@ export class LogisticStationMem {
     }
 
     removeTask(taskType: "MOVE" | "TRANSFER" | "WITHDRAW" | "FILL", id: string): void {
+
+        console.log(id)
+        console.log(taskType)
+
         const creepName = this.rootMem['task'][taskType][id]["creepName"]
+        console.log(creepName)
+
         if (creepName && Memory.creeps[creepName]) {
             this.updateCreepStatus(creepName, "Idle");
         }
@@ -149,7 +155,7 @@ export class LogisticStationMem {
         const creepDeadTick = this.getCreepDeadTick();
         const creepNameList: string[] = [];
         for (let creepName in creepDeadTick) {
-            if (creepDeadTick[creepName]) {
+            if (creepDeadTick[creepName] && creepDeadTick[creepName] > 30) {
                 const creepTaskStatus = this.getCreepTask(creepName);
                 if (creepTaskStatus.status === 'Idle') {
                     creepNameList.push(creepName);

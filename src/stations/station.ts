@@ -86,6 +86,40 @@ export abstract class Station {
     }
 
 
+    /***************** UTIL FUNCTIONS *****************/
+    getStoredEnergy(): number {
+        const storage = Game.rooms[this.roomName].storage;
+        if (storage) return storage.store[RESOURCE_ENERGY];
+        else {
+            //search for containers and sum total energy stored
+            const containers: StructureContainer[] = Game.rooms[this.roomName].find(FIND_STRUCTURES, {
+                filter: (structure) => {
+                    return structure.structureType == STRUCTURE_CONTAINER;
+                }
+            })
+            let totalEnergy = 0;
+            for (let i = 0; i < containers.length; ++i) {
+                totalEnergy += containers[i].store[RESOURCE_ENERGY];
+            }
+            return totalEnergy;
+        }
+    }
+
+    // body resource = body part * ticks to live if the creep
+    getBodyResource(creepName: string, bodyPart: BodyPartConstant): number {
+        //return creep.body.filter((body) => body.type == bodyPart).length * creep.ticksToLive;
+        const creep = Game.creeps[creepName];
+        if (creep) {
+            if (creep.spawning)
+                return creep.body.filter((body) => body.type == bodyPart).length * 1500;
+            else return creep.body.filter((body) => body.type == bodyPart).length * creep.ticksToLive;
+        }
+        else {
+            return 0;
+        }
+    }
+
+
 
 
 

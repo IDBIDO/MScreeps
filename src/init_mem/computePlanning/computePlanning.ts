@@ -362,6 +362,31 @@ export function generateTemporal(roomName: string) {
     //modify extension order
     tempExtension(roomName);
 
+}
 
+export function getAdjacentRoadReferenceList(roomName: string, structureName: string, index: string): number[] {
 
+    const model = Memory['colony'][roomName]['roomPlanning']['model'];
+    const structurePos: [number, number] = model[structureName][index]['pos'];
+    const roadList = model['road'];
+
+    let adjList: number[] = [];
+    for (let i = 0; i < roadList.length; ++i) {
+        if (utils.distanceTwoPoints(structurePos, roadList[i]['pos']) == 1) {
+            adjList.push(i);
+        }
+    }
+    return adjList;
+}
+
+export function generateRoadReference(roomName: string) {
+    Memory['colony'][roomName]['roomPlanning']['AdjacentRoadReference'] = {};
+    const model = Memory['colony'][roomName]['roomPlanning']['model'];
+    for (let structureName in model) {
+        Memory['colony'][roomName]['roomPlanning']['AdjacentRoadReference'][structureName] = {}
+        for (let i in model[structureName])
+            Memory['colony'][roomName]['roomPlanning']['AdjacentRoadReference'][structureName][i] =
+                getAdjacentRoadReferenceList(roomName, structureName, i);
+
+    }
 }

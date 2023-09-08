@@ -6,7 +6,7 @@ export class OrderManager {
         this.rootMem = Memory['colony'][roomName];
     }
 
-    sendOrder(orderName: CreepControlOrder, data: {}, department: DepartmentName, stationType: StationType | null): void {
+    sendOrder(orderName: CreepControlOrder | "ADD_BUILD_TASK", data: {}, department: DepartmentName, stationType: StationType | null): void {
         if (stationType != null) {
             this.rootMem[department][stationType]['order'].push({
                 name: orderName,
@@ -26,6 +26,17 @@ export class OrderManager {
         for (let stationType in harvestStationList) {
             this.sendOrder('SEARCH_BUILDING_TASK', {}, 'dpt_harvest', stationType as HarvestStationType);
             this.sendOrder('UPDATE_CREEP_NUM', {}, 'dpt_harvest', stationType as HarvestStationType);
+        }
+
+        const buildStationList = this.rootMem['dpt_build'];
+        for (let stationType in buildStationList) {
+            this.sendOrder('SEARCH_BUILDING_TASK', {}, 'dpt_build', stationType as BuildStationType);
+            //this.sendOrder('UPDATE_CREEP_NUM', {}, 'dpt_build', stationType as BuildStationType);
+        }
+
+        const logisticStationList = this.rootMem['dpt_logistic'];
+        for (let stationType in logisticStationList) {
+            this.sendOrder('SEARCH_BUILDING_TASK', {}, 'dpt_logistic', stationType as LogisticStationType);
         }
 
         // for creepSpawning search for spawn and add it to spawnID using UPDATE_BUILDING_INFO order

@@ -20,6 +20,7 @@ export function iniRoomPlanning(roomName: string): void {
     generateLinkReference(roomStructsData['link'], roomName);             //link reference
 
     generateRoadReference(roomStructsData['road'], roomName);   //road reference
+    generateAdjacentRoadReferenceHash(roomName);                //adjacent road reference hash
 }
 
 export function generateModel(model: {}, roomName: string): void {
@@ -65,4 +66,9 @@ export function  generateLinkReference(linkList:[], roomName: string): void {
 
 export function generateRoadReference(roadList:[], roomName: string): void {
     computePlanning.getRoadReference(roadList, roomName);
+}
+
+export function generateAdjacentRoadReferenceHash(roomName: string): void {
+    computePlanning.generateRoadReference(roomName);
+
 }

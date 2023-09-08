@@ -161,7 +161,7 @@ type GeneralOrder = 'UPDATE_BUILDING_INFO' | 'SEARCH_BUILDING_TASK' | 'UPDATE_CR
 
 type CreepControlOrder = 'ADD_CREEP' | 'REMOVE_CREEP' | GeneralOrder;
 
-type StationType = HarvestStationType | LogisticStationType
+type StationType = HarvestStationType | LogisticStationType | BuildStationType;
 
 /***************************************************
  *                 HARVEST STATION                 *
@@ -182,6 +182,34 @@ type HarvestStationOrder = CreepControlOrder;
 
 type HarvestStationType = 'source1' | 'mineral' | 'source2' | 'highway';
 
+/***************************************************
+ *                 BUILD STATION                 *
+ ***************************************************/
+interface BuildStationMemory extends StationMemory {
+    order: {name: BuildStationOrder, data: {}}[];
+    buildTask: {
+        0: BuildTaskData[],     // for storage structure (storage, container, link, terminal, extractor)
+        1: BuildTaskData[],     // Roads
+        2: BuildTaskData[],     // tower
+        3: BuildTaskData[],     // spawn and extension
+        4: BuildTaskData[],     // other structure
+    }
+}
+
+interface BuildTaskData {
+    id: string;
+    department: DepartmentName;
+    stationType: StationType;
+    pos: [number, number];
+    roomName: string;
+    structureType: BuildableStructureConstant;
+    index: number;
+
+}
+
+type BuildStationType = 'internal_build';
+
+type BuildStationOrder = CreepControlOrder | 'ADD_BUILD_TASK';
 
 /***************************************************
  *                 LOGISTIC STATION                *

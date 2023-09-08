@@ -24,7 +24,6 @@ export const maxBodyProportion = {
 export const energyAvailable = [300, 550, 800, 1300, 1800, 2300, 5600, 10000]
 export function getMaxSimpleBody(role: CreepRole,  roomName: string): BodyPartConstant[] {
 
-
     const bodyPrototypeModel: BodyPartConstant[] = bodyPrototype[role];
     const bodyProportionModel: number[] = bodyProportion[role];
 

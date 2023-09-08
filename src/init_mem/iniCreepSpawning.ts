@@ -8,10 +8,10 @@ export function iniCreepSpawning(roomName: string) {
         2: {},
     };
 
-    // search for spawns in the room
-    let spawns = Game.rooms[roomName].find(FIND_MY_SPAWNS);
-    for (let i in spawns) {
-        Memory['colony'][roomName]['creepSpawning']['spawnId'].push(spawns[i].id);
-    }
+    // // search for spawns in the room
+    // let spawns = Game.rooms[roomName].find(FIND_MY_SPAWNS);
+    // for (let i in spawns) {
+    //     Memory['colony'][roomName]['creepSpawning']['spawnId'].push(spawns[i].id);
+    // }
 
 }
