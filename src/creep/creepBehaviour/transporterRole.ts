@@ -345,7 +345,7 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
             else {
                 const storageId = logisticStationMem.getStorageId()
                 const storage = Game.getObjectById(storageId as Id<StructureStorage> | Id<StructureContainer> | Id<StructureSpawn>);
-                if (storage && storage.store.getFreeCapacity(task.resourceType) > 250) {
+                if (storage && storage.store.getUsedCapacity(task.resourceType) > 250) {
                     const targetStructure = Game.getObjectById(task.taskObjectInfo.id as Id<StructureStorage>);
                     if (!targetStructure) {
                         creep.memory.task.status = "Done";
@@ -464,6 +464,7 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
             const storage = Game.getObjectById(storageId as Id<StructureStorage> | Id<StructureContainer> | Id<StructureSpawn>);
             if (storage) {
                 const creepResources = Object.keys(creep.store)[0];
+                creep.say(creepResources)
                 if (creepResources) {
                     const r = creep.transfer(storage, creepResources as ResourceConstant);
                     if (r == ERR_NOT_IN_RANGE) {creep.moveTo(storage); return false; }

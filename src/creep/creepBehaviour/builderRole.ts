@@ -41,6 +41,7 @@ const builderRole:{
 
         source: (creep: Creep): boolean => {
             const buildTaskData = getHighestPriorityTask(creep.memory.roomName, creep.memory.workStationID as BuildStationType);
+            //creep.say(buildTaskData.id)
             if (!buildTaskData) {               // No task
                 creep.say('No task');
                 return false;

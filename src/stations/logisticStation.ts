@@ -205,7 +205,7 @@ export class LogisticStation extends Station{
     private checkStorageId(): void {
         const roomPlanningMem = new RoomPlanningMem(this.roomName);
         const storagePos = roomPlanningMem.getModel("storage")[0];
-        const storagePosObject = new RoomPosition(storagePos[0], storagePos[1], this.roomName);
+        const storagePosObject = new RoomPosition(storagePos.pos[0], storagePos.pos[1], this.roomName);
         // const find storage in storage Pos
         const storage = storagePosObject.lookFor(LOOK_STRUCTURES).find(structure => structure.structureType === 'storage');
 
@@ -215,22 +215,18 @@ export class LogisticStation extends Station{
         } // if no storage in storage Pos, find container in this pos
         else {
             const container = storagePosObject.lookFor(LOOK_STRUCTURES).find(structure => structure.structureType === 'container');
-            if (container) {
+            if (container && this.access_memory.getStorageId() != container.id) {
                 this.access_memory.updateStorageId(container.id);
+            } else {
+                // else find any spawn
+                const currentStorageId = this.access_memory.getStorageId();
+                const spawn = Game.rooms[this.roomName].find(FIND_MY_SPAWNS)[0];
+                if (spawn) {
+                    this.access_memory.updateStorageId(spawn.id);
+                }
+
             }
         }
-        // else find any spawn
-        const currentStorageId = this.access_memory.getStorageId();
-        if (!currentStorageId) {
-            const spawn = Game.rooms[this.roomName].find(FIND_MY_SPAWNS)[0];
-            if (spawn) {
-                this.access_memory.updateStorageId(spawn.id);
-            }
-        }
-
-
-
-
 
     }
 

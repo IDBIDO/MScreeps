@@ -216,7 +216,7 @@ export class BuildStation extends Station {
                     const constructionSite = Game.getObjectById(constructionSiteId as Id<ConstructionSite>);
                     if (constructionSite) {
                         deleted = false;
-                    } else {        // no construction side in this position, search if exist structure
+                    } else {        // no construction site in this position, search if exist structure
                         const foundStructure = this.searchAndSaveCompleteStructure(highPriorityBuildTask);
                         if (!foundStructure) {
                             //this.access_memory.removeHighPriorityBuildTask();
@@ -243,7 +243,7 @@ export class BuildStation extends Station {
 
     }
 
-    private searchAndSaveCompleteStructure(highPriorityBuildTask: BuildTaskData) {
+    public searchAndSaveCompleteStructure(highPriorityBuildTask: BuildTaskData) {
         const structureInfo = Game.rooms[highPriorityBuildTask.roomName].lookForAt(LOOK_STRUCTURES, highPriorityBuildTask.pos[0], highPriorityBuildTask.pos[1]);
         let structureFound = false;
         if (structureInfo.length) {
@@ -296,7 +296,7 @@ export class BuildStation extends Station {
     private removeDeadCreep(): void {
         const creepDeadTick = this.access_memory.getCreepDeadTick();
         for (const creepName in creepDeadTick) {
-            if (creepDeadTick[creepName] && creepDeadTick[creepName] - Game.time > 0) {
+            if (creepDeadTick[creepName] && creepDeadTick[creepName] - Game.time < 0) {
                 delete creepDeadTick[creepName];
                 delete Memory['creeps'][creepName];
             }

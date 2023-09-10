@@ -109,10 +109,15 @@ const harvesterRole:{
             else {
 
                 const target = Game.getObjectById(targetInfo.id as Id<Structure>);
+                // check if target need repair
+                if (target.hits < target.hitsMax - 5000) {
+                    creep.repair(target);
+                } else {
 
-                const r = creep.transfer(target, 'energy');
-                if (r == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target, {ignoreCreeps: false});
+                    const r = creep.transfer(target, 'energy');
+                    if (r == ERR_NOT_IN_RANGE) {
+                        creep.moveTo(target, {ignoreCreeps: false});
+                    }
                 }
 
             }

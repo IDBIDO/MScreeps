@@ -271,7 +271,7 @@ export class HarvestStation extends Station{
             const result = Game.rooms[this.roomName].createConstructionSite(containerPos[0], containerPos[1], STRUCTURE_CONTAINER);
 
 
-        }
+        } else orderComplete = true;
         return orderComplete
     }
 

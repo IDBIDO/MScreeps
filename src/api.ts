@@ -1,4 +1,5 @@
 import {iniColony} from "./init_mem/ini_index";
+import {BuildStation} from "@/stations/buildStation";
 
 
 global.api = {
@@ -21,6 +22,25 @@ global.api = {
         iniColony(roomName);
         return 'Colony ' + roomName  + ' created';
     },
+
+
+    // test functions
+    testBuildStation(){
+        const buildStation = new BuildStation("W7N7", "internal_build");
+        const buildTask: BuildTaskData = {
+            department: "dpt_harvest",
+            id: "",
+            index: null,
+            pos: [15, 11],
+            roomName: "W7N7",
+            stationType: "source1",
+            structureType: "container"
+        }
+
+        buildStation.searchAndSaveCompleteStructure(buildTask);
+        const r = Memory["colony"]["dpt_harvest"]["source1"]["order"]
+        console.log(r)
+    }
 
 
 }
