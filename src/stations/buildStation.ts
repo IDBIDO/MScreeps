@@ -58,6 +58,11 @@ export class BuildStation extends Station {
                     this.checkRoadPathTask();
                     this.access_memory.removeOrder();
                     break;
+                case "UPDATE_CREEP_BODY":
+                    //this.updateCreepBody();
+                    const creepConfig = this.access_memory.getCreepConfig();
+                    creepConfig.body = this.getCurrentBodyConfig();
+                    break;
                 default:
                     this.access_memory.removeOrder();
                     break;

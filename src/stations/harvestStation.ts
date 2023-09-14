@@ -59,13 +59,16 @@ export class HarvestStation extends Station{
                     break;
                 case 'SEARCH_BUILDING_TASK':
                     const a = this.searchBuildingTask();
-
                     if (a) this.access_memory.removeOrder();
-
                     break;
                 case 'UPDATE_CREEP_NUM':
                     this.updateCreepNum();
                     this.access_memory.removeOrder();
+                    break;
+                case "UPDATE_CREEP_BODY":
+                    //this.updateCreepBody();
+                    const creepConfig = this.access_memory.getCreepConfig();
+                    creepConfig.body = this.getCurrentBodyConfig();
                     break;
                 default:
                     break;

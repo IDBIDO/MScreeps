@@ -45,8 +45,8 @@ export function iniDptLogistic(roomName: string, stationName: string) {
     let iniMem: LogisticStationMemory = {
         creepConfig: {
             body: {
-                carry: 2,
-                move: 1,
+                carry: 3,
+                move: 3,
             },
             priority: 0,
             creepMemory: {
@@ -54,6 +54,7 @@ export function iniDptLogistic(roomName: string, stationName: string) {
 
                 working: false,
                 ready: false,
+                ending: false,
                 dontPullMe: false,
 
                 workStationID: stationName,

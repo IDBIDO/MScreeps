@@ -4,6 +4,7 @@ import {iniCreepSpawning} from "@/init_mem/iniCreepSpawning";
 import {OrderManager} from "@/orderManager";
 import {iniDptLogistic, iniLogistic} from "@/init_mem/iniDptLogistic";
 import {iniDptBuilder} from "@/init_mem/iniDptBuilder";
+import {iniDptUpgrade} from "@/init_mem/iniDptUpgrader";
 
 
 export function iniColony(roomName: string) {
@@ -15,6 +16,8 @@ export function iniColony(roomName: string) {
     iniDptHarvest(roomName);
     iniLogistic(roomName);
     iniDptBuilder(roomName);
+
+    iniDptUpgrade(roomName);
 
     const orderManager = new OrderManager(roomName);
     orderManager.sendIniOrder();

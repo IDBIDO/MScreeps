@@ -39,15 +39,29 @@ export class OrderManager {
             this.sendOrder('SEARCH_BUILDING_TASK', {}, 'dpt_logistic', stationType as LogisticStationType);
         }
 
-        // for creepSpawning search for spawn and add it to spawnID using UPDATE_BUILDING_INFO order
-        const roomObject = Game.rooms[this.roomName];
-        const spawnList = roomObject.find(FIND_MY_STRUCTURES, {
-            filter: (structure) => {
-                return structure.structureType === 'spawn';
+        const upgraderStationList = this.rootMem['dpt_upgrade'];
+        for (let stationType in upgraderStationList) {
+            this.sendOrder('SEARCH_BUILDING_TASK', {}, 'dpt_upgrade', stationType as UpgraderStationType);
+            //this.sendOrder('UPDATE_CREEP_NUM', {}, 'dpt_upgrade', stationType as UpgraderStationType);
+        }
+
+        // RCL == 1:  for creepSpawning search for spawn and add it to spawnID using UPDATE_BUILDING_INFO order
+        if (Game.rooms[this.roomName].controller.level == 1) {
+            const roomObject = Game.rooms[this.roomName];
+            const spawnList = roomObject.find(FIND_MY_STRUCTURES, {
+                filter: (structure) => {
+                    return structure.structureType === 'spawn';
+                }
+            });
+            for (let spawn of spawnList) {
+                this.sendOrder('UPDATE_BUILDING_INFO', {
+                    targetInfo: {
+                        id: spawn.id,
+                        roomName: this.roomName,
+                        pos: [0, 0]
+                    }
+                }, 'creepSpawning', null);
             }
-        });
-        for (let spawn of spawnList) {
-            this.sendOrder('UPDATE_BUILDING_INFO', {targetInfo: {id: spawn.id, roomName: this.roomName, pos: [0,0]}}, 'creepSpawning', null);
         }
 
     }

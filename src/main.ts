@@ -9,6 +9,7 @@ import {HarvestStationMem} from "@/access_memory/harvestStationMem";
 import {RealiseLogisticOrder} from "@/stations/realiseLogisticOrder";
 import {LogisticStation} from "@/stations/logisticStation";
 import {BuildStation} from "@/stations/buildStation";
+import {UpgradeStation} from "@/stations/upgradeStation";
 
 
 export function mount() {
@@ -45,6 +46,11 @@ export function runDptBuild(roomName: string) {
     buildStation.run();
 }
 
+export function runDptUpgrade(roomName: string) {
+    const upgradeStation = new UpgradeStation(roomName, "internal_upgrade");
+    upgradeStation.run();
+}
+
 export function runDpt() {
     const colonyMem = Memory['colony'];
     // for each room in colony
@@ -52,7 +58,9 @@ export function runDpt() {
         runDptHarvest(roomName);
         runDptBuild(roomName);
         runDptLogistic(roomName);
+        runDptUpgrade(roomName);
         runCreepSpawning(roomName);
+
     }
 
 }
@@ -84,6 +92,13 @@ export function runBuildCreep() {
     }
 }
 
+export function runUpgradeCreep() {
+    for (let creep of Object.values(Game.creeps)) {
+        if (creep.memory.departmentName == 'dpt_upgrade')
+            creep['work']();
+    }
+}
+
 module.exports.loop = function() {
 
     mount();
@@ -94,5 +109,9 @@ module.exports.loop = function() {
     runLogisticCreep();
     runBuildCreep();
 
+
     //api.createColony("W7N7");
 }
+
+// TODO 1. new transporter creep status: doneButNotFinish
+// TODO 2. check transporter creep transfer behavior

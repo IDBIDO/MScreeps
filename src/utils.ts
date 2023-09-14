@@ -1,3 +1,92 @@
+import {transformRoadToAdjacentList} from "@/init_mem/computePlanning/planningUtils";
+
+export function getMovementPath(posList:[number, number][]): number[] {
+    const adjacentList = transformRoadToAdjacentList(posList);
+    const path = findHamiltonianPath(adjacentList);
+
+    let detailPath = [];
+    for (let i = 0; i < path.length; i++) {
+        //console.log(posList[path[i]])
+        detailPath.push(posList[path[i]]);
+    }
+    detailPath.push(posList[path[0]]);
+    console.log(computeMovementVector(detailPath))
+
+    return computeMovementVector(detailPath)
+}
+
+function findHamiltonianPath(graph: number[][]): number[] | null {
+    const numVertices = graph.length;
+    const path: number[] = [];
+
+    function isHamiltonianPath(currentPath: number[]): boolean {
+        if (currentPath.length === numVertices) {
+            return true; // Found a Hamiltonian path
+        }
+
+        const lastVertex = currentPath[currentPath.length - 1];
+        for (const neighbor of graph[lastVertex]) {
+            if (!currentPath.includes(neighbor)) {
+                currentPath.push(neighbor);
+                if (isHamiltonianPath(currentPath)) {
+                    return true;
+                }
+                currentPath.pop(); // Backtrack
+            }
+        }
+
+        return false;
+    }
+
+    // Try starting from each vertex as the initial vertex
+    for (let startVertex = 0; startVertex < numVertices; startVertex++) {
+        path.push(startVertex);
+        if (isHamiltonianPath(path)) {
+            return path; // Found a Hamiltonian path
+        }
+        path.pop();
+    }
+
+    return null; // No Hamiltonian path found
+}
+
+// Helper function to calculate the cross product of three points
+function crossProduct(a: [number, number], b: [number, number], c: [number, number]): number {
+    const cross = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    return cross;
+}
+
+export function computeMovementVector(path: [number, number][]): number[] {
+    const movements: number[] = [];
+    for (let i = 1; i < path.length; i++) {
+        const dx = path[i][0] - path[i - 1][0];
+        const dy = path[i][1] - path[i - 1][1];
+        let movement: number;
+
+        if (dx === 0 && dy === -1) {
+            movement = TOP;
+        } else if (dx === 1 && dy === -1) {
+            movement = TOP_RIGHT;
+        } else if (dx === 1 && dy === 0) {
+            movement = RIGHT;
+        } else if (dx === 1 && dy === 1) {
+            movement = BOTTOM_RIGHT;
+        } else if (dx === 0 && dy === 1) {
+            movement = BOTTOM;
+        } else if (dx === -1 && dy === 1) {
+            movement = BOTTOM_LEFT;
+        } else if (dx === -1 && dy === 0) {
+            movement = LEFT;
+        } else if (dx === -1 && dy === -1) {
+            movement = TOP_LEFT;
+        } else {
+            throw new Error('Invalid movement between points.');
+        }
+
+        movements.push(movement);
+    }
+    return movements;
+}
 
 
 export function countStructure(room: string, structureType: StructureConstant): number {

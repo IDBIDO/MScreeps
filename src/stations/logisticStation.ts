@@ -69,13 +69,25 @@ export class LogisticStation extends Station{
                     this.removeCreep(order.data as {creepName: string});
                     break;
                 case 'UPDATE_BUILDING_INFO':
-                    this.updateBuildingInfo(order.data as {storageId: string});
+                    this.updateBuildingInfo(order.data as ID_Room_position);
                     break;
                 case 'SEARCH_BUILDING_TASK':
                     this.searchBuildingTask();
                     break;
                 case 'UPDATE_CREEP_NUM':
                     this.updateCreepNum();
+                    break;
+                case "UPDATE_CREEP_BODY":
+                    //this.updateCreepBody();
+                    const creepConfig = this.access_memory.getCreepConfig();
+                    creepConfig.body = this.getCurrentBodyConfig();
+                    if (Game.rooms[this.roomName].controller.level == 1) {
+                        creepConfig.body = {
+                            //"work": 1,
+                            "carry": 3,
+                            "move": 3
+                        }
+                    }
                     break;
                 default:
                     break;
@@ -86,6 +98,8 @@ export class LogisticStation extends Station{
         }
 
     }
+
+
 
     private updateCreepNum(): void {
 
@@ -149,7 +163,7 @@ export class LogisticStation extends Station{
 
     }
 
-    private updateBuildingInfo(data: {storageId: string}): void {
+    private updateBuildingInfo(data: ID_Room_position): void {
 
 
     }
@@ -207,7 +221,7 @@ export class LogisticStation extends Station{
         const storagePos = roomPlanningMem.getModel("storage")[0];
         const storagePosObject = new RoomPosition(storagePos.pos[0], storagePos.pos[1], this.roomName);
         // const find storage in storage Pos
-        const storage = storagePosObject.lookFor(LOOK_STRUCTURES).find(structure => structure.structureType === 'storage');
+        const storage = storagePosObject.lookFor(LOOK_STRUCTURES).find(structure => structure.structureType === 'storage' );
 
         if (storage) {
             if (this.access_memory.getStorageId() !== storage.id)  this.access_memory.updateStorageId(storage.id);
@@ -215,8 +229,9 @@ export class LogisticStation extends Station{
         } // if no storage in storage Pos, find container in this pos
         else {
             const container = storagePosObject.lookFor(LOOK_STRUCTURES).find(structure => structure.structureType === 'container');
-            if (container && this.access_memory.getStorageId() != container.id) {
-                this.access_memory.updateStorageId(container.id);
+            if (container) {
+                if (this.access_memory.getStorageId() !== container.id)
+                    this.access_memory.updateStorageId(container.id);
             } else {
                 // else find any spawn
                 const currentStorageId = this.access_memory.getStorageId();

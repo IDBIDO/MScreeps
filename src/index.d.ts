@@ -81,6 +81,7 @@ interface CreepMemory {
 
     working:  boolean;
     ready:  boolean;
+    ending: boolean;
     dontPullMe: boolean;
 
     workStationID:  string;
@@ -90,11 +91,11 @@ interface CreepMemory {
     task?: {
         id: string;
         type: 'MOVE' | 'TRANSFER' | 'WITHDRAW' | 'FILL';
-        status: 'InProcess' | 'Done' | 'Idle';
+        status: 'InProcess' | 'TaskDone' | 'Idle';
 
     } | any;
 }
-type CreepRole = HarvesterRole | TransporterRole | BuilderRole //| UpgraderRole;
+type CreepRole = HarvesterRole | TransporterRole | BuilderRole | UpgraderRole;
     //"harvester" | "miner" |"transporter" | "builder" | "upgrader" | "repairer"
 
 type HarvesterRole = 'harvester' | 'miner';
@@ -133,6 +134,8 @@ interface ICreepConfig {
     // 返回 true 则执行 source 阶段，返回其他将继续执行该方法
     target: (creep: Creep) => boolean;
 
+    ending?: (creep: Creep) => boolean;
+
     // 每个角色默认的身体组成部分
     //bodys: BodyPartConstant[];
 }
@@ -157,11 +160,11 @@ interface  CreepSpawnConfig {
     creepMemory:  CreepMemory
 }
 
-type GeneralOrder = 'UPDATE_BUILDING_INFO' | 'SEARCH_BUILDING_TASK' | 'UPDATE_CREEP_NUM';
+type GeneralOrder = 'UPDATE_BUILDING_INFO' | 'SEARCH_BUILDING_TASK' | 'UPDATE_CREEP_NUM' | 'UPDATE_CREEP_BODY';
 
 type CreepControlOrder = 'ADD_CREEP' | 'REMOVE_CREEP' | GeneralOrder;
 
-type StationType = HarvestStationType | LogisticStationType | BuildStationType;
+type StationType = HarvestStationType | LogisticStationType | BuildStationType | UpgraderStationType
 
 /***************************************************
  *                 HARVEST STATION                 *
@@ -210,6 +213,33 @@ interface BuildTaskData {
 type BuildStationType = 'internal_build';
 
 type BuildStationOrder = CreepControlOrder | 'ADD_BUILD_TASK';
+
+/***************************************************
+ *                 UPGRADE STATION                 *
+ ***************************************************/
+interface UpgradeStationMemory extends StationMemory {
+    order: {name: CreepControlOrder, data: {}}[];
+    sourceInfo: {
+        id: string;
+        pos: [number, number];
+        roomName: string;
+        type: 'container' | 'link' | null;
+
+    };
+    currentRCL: number;
+    levelUp: boolean;
+
+    containerWorkPos: [number, number][];  // task[0] = x, task[1] = y, task[2]: 0|1 = occupied?
+    containerPath: number[];                     // Movement for each containerWorkPos
+    containerPathEntrance: number;            // containerWorkPos[containerWorkPosEntrance] -> entrance foe new creeps
+    linkWorkPos: [number, number][];  // task[0] = x, task[1] = y, task[2]: 0|1 = occupied?
+    linkPath: number[];                     // Movement for each linkWorkPos
+    linkPathEntrance: number;            // linkWorkPos[linkWorkPosEntrance] -> entrance foe new creeps
+
+
+}
+
+type UpgraderStationType = 'internal_upgrade';
 
 /***************************************************
  *                 LOGISTIC STATION                *

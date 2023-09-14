@@ -87,10 +87,18 @@ export class RealiseLogisticOrder {
                 this.mem.removeTask("MOVE", stationType);
 
             }
-            if (target.store.getUsedCapacity() >= 800 && !this.mem.existTask(stationType, "WITHDRAW")) {
+
+            const task1 = stationType + "_1";
+            if (target.store.getUsedCapacity() >= 800 && !this.mem.existTask(task1, "WITHDRAW")) {
                 const withDrawTask = this.createTask("WITHDRAW", "energy", "dpt_harvest",
                                  stationType, targetInfo, null);
-                this.mem.getTask().WITHDRAW[stationType] = withDrawTask;
+                this.mem.getTask().WITHDRAW[task1] = withDrawTask;
+            }
+            const task2 = stationType + "_2";
+            if (target.store.getUsedCapacity() >= 1600 && !this.mem.existTask(task2, "WITHDRAW")) {
+                const withDrawTask = this.createTask("WITHDRAW", "energy", "dpt_harvest",
+                                 stationType, targetInfo, null);
+                this.mem.getTask().WITHDRAW[task2] = withDrawTask;
             }
 
 

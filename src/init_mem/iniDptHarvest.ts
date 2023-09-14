@@ -28,7 +28,9 @@ export function iniStationHarvest(roomName: string, stationName: string) {
 
                 working: false,
                 ready: false,
+                ending: false,
                 dontPullMe: true,
+
 
                 workStationID: stationName,
                 departmentName: "dpt_harvest",

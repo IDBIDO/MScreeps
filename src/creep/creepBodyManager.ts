@@ -6,6 +6,7 @@ export const bodyPrototype = {
     builder: [WORK, CARRY, MOVE],
     transporter: [CARRY, MOVE],
     upgrader: [WORK, CARRY, MOVE],
+    repairer: [WORK, CARRY, MOVE]
 }
 
 export const bodyProportion = {
@@ -13,6 +14,7 @@ export const bodyProportion = {
     builder: [1, 3, 1],
     transporter: [2, 1],
     upgrader: [2, 1, 1],
+    repairer: [1, 2, 1]
 }
 
 export const maxBodyProportion = {
@@ -20,6 +22,7 @@ export const maxBodyProportion = {
     builder: 5,
     transporter: 10,
     upgrader: 10,
+    repairer: 5
 }
 export const energyAvailable = [300, 550, 800, 1300, 1800, 2300, 5600, 10000]
 export function getMaxSimpleBody(role: CreepRole,  roomName: string): BodyPartConstant[] {
@@ -62,6 +65,19 @@ export function getMaxSimpleBody(role: CreepRole,  roomName: string): BodyPartCo
     return body;
 }
 
+// transform to bodyPart format
+export function transformBodyFormat(body: BodyPartConstant[]) {
+    const bodyPart: bodyPart = {};
+    for (let i = 0; i < body.length; ++i) {
+        if (bodyPart[body[i]]) {
+            bodyPart[body[i]] += 1;
+        }
+        else {
+            bodyPart[body[i]] = 1;
+        }
+    }
+    return bodyPart;
+}
 
 
 export function getEnergyRCL(energyAmount: number): number {

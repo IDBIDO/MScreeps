@@ -1,4 +1,5 @@
 import {CreepSpawnMem, creepSpawnMem} from "@/access_memory/creepSpawnMem";
+import {getMaxSimpleBody, transformBodyFormat} from "@/creep/creepBodyManager";
 
 export abstract class Station {
 
@@ -32,6 +33,16 @@ export abstract class Station {
 
     public addOrder(order: {name: HarvestStationOrder, data: {}}): void {
         this.rootObject['order'].push(order);
+    }
+
+    public getCreepRole(): CreepRole {
+        return this.rootObject['creepConfig']['creepMemory']['role'];
+    }
+
+    protected getCurrentBodyConfig() {
+        const r = getMaxSimpleBody(this.getCreepRole(), this.roomName);
+        const bodyPart = transformBodyFormat(r);
+        return bodyPart;
     }
 
     /***************** UTILS *****************/

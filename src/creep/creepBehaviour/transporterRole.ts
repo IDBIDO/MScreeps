@@ -61,10 +61,11 @@ export function emptyStorageOperation(creep: Creep, needDrop: boolean) {
                 const result = creep.transfer(storage, creepStorage[0]);
 
                 if (result == ERR_NOT_IN_RANGE) creep.moveTo(storage);
-                else if (needDrop && result == ERR_FULL) creep.drop(creepStorage[0]);
+                //else if (needDrop && result == ERR_FULL) creep.drop(creepStorage[0]);
             }
         }
     }
+
 
 }
 
@@ -75,19 +76,14 @@ const transporterRole:{
     transporter: (): ICreepConfig => ({
 
         source: (creep: Creep): boolean => {
-            // check check live time
+            // check live time
             //if (creep.ticksToLive < 30) deadOperation(creep);
 
             if (creep.memory.task.status == "InProcess") {
-                // TODO FOR EACH TASK TYPE MAKE CREEP EMPTY STORAGE
                 return transferTaskOperations[creep.memory.task.type].source(creep);
             }
             else {
-                if (creep.store.getUsedCapacity() > 0) emptyStorageOperation(creep, false);
-
-                //sendTaskRequest(creep);
-                //console.log('TASK!!!');
-                return false;
+                creep.say('💤');
             }
 
 
@@ -101,6 +97,19 @@ const transporterRole:{
             //console.log('waiting for task');
 
             return true;
+        },
+
+        ending: (creep: Creep): boolean => {
+            if (creep.store.getUsedCapacity() > 0) {
+                emptyStorageOperation(creep, true);
+            }
+            const r =  creep.store.getUsedCapacity() <= 0;
+            if (r) {
+                creep.memory.ending = false;
+                creep.memory.task.status = "Idle";
+                creep.memory.working = false;
+            }
+            return r;
         }
     })
 
@@ -169,10 +178,9 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
         source: (creep:Creep) => {
             // if room energy is full, return true
             if (creep.room.energyAvailable == creep.room.energyCapacityAvailable) {
-                creep.memory.task.status = "Done";
+                creep.memory.task.status = "Idle";
                 return false;
             }
-
 
             const logisticStationMem = new LogisticStationMem(creep.memory.roomName, creep.memory.workStationID as LogisticStationType)
             const storageId = logisticStationMem.getStorageId()
@@ -181,14 +189,17 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
             if (checkUnicResourceType(creep, RESOURCE_ENERGY)) {
                 if (storageId) {
                     if (storage instanceof StructureSpawn) {
+
                         initialLevelOperation(creep);
                     } else {
+
                         const r = creep.withdraw(storage, RESOURCE_ENERGY);
-                        if (r == ERR_NOT_IN_RANGE) creep.moveTo(storage);
+                        if (r == ERR_NOT_IN_RANGE) {creep.moveTo(storage);}
                         else if (r == ERR_NOT_ENOUGH_RESOURCES) return false;
                     }
                 }
             } else {
+
                 if (storage) {
                     // transfer all resources different to RESOURCE_ENERGY to storage
                     const creepResources = Object.keys(creep.store);
@@ -249,18 +260,21 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
             const target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
                 filter: s => ((s.structureType == STRUCTURE_EXTENSION || s.structureType == STRUCTURE_SPAWN) && (s.store.getFreeCapacity(RESOURCE_ENERGY) > 0))
             })
-            if (!target) return true;
+            if (!target) {
+                if (creep.store.getUsedCapacity() > 0) {
+                    creep.memory.ending = true;
+                } else {
+                    creep.memory.task.status = "Idle";
+                }
 
+                return true;
+            }
             creep.moveTo(target.pos)
             const result = creep.transfer(target, RESOURCE_ENERGY)
             if (result === ERR_NOT_ENOUGH_RESOURCES || result === ERR_FULL) return true
             else if (result != OK && result != ERR_NOT_IN_RANGE) creep.say(`拓展填充 ${result}`)
 
             return creep.store[RESOURCE_ENERGY] === 0;
-
-
-
-
 
         }
 
@@ -269,8 +283,12 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
         source: (creep:Creep) => {
             const logisticStationMem = new LogisticStationMem(creep.memory.roomName, creep.memory.workStationID as LogisticStationType)
             const task = logisticStationMem.getTaskWithId("MOVE", creep.memory.task.id);
-            if (!task) {
-                creep.memory.task.status = "Done";
+            if (!task) {        // task deleted, check if creep storage is empty
+                if (creep.store.getUsedCapacity() > 0) {
+                    creep.memory.ending = true;
+                } else {
+                    creep.memory.task.status = "Idle";      // task deleted, no need to send confirmation
+                }
                 return false;
             }
             else {
@@ -282,9 +300,19 @@ export const transferTaskOperations: { [task in 'MOVE' | 'TRANSFER' | 'WITHDRAW'
                         return false;
                     }
                     //if creep is near to objectCreep, wait to get storage full
+                    else {
+                        //check if storage is full
+                        if (creep.store.getFreeCapacity() <= 0) {
+                            creep.memory.ending = true;
+                            creep.memory.task.status = "TaskDone";
+                            return false;
+                        }
+                    }
 
-                } else {        // creep likely to be dead
-                    creep.memory.task.status = "Done";
+                } else {        // creep dead, check if creep storage is empty and send confirmation
+                    if (creep.store.getUsedCapacity() > 0) {
+                        creep.memory.ending = true;
+                    } else creep.memory.task.status = "TaskDone";
                     return false;
 
                 }

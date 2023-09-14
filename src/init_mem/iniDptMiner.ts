@@ -28,6 +28,7 @@ export function iniStationMiner(roomName: string, stationName: string) {
 
                 working: false,
                 ready: false,
+                ending: false,
                 dontPullMe: true,
 
                 workStationID: stationName,
