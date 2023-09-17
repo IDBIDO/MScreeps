@@ -89,16 +89,13 @@ export class LogisticStationMem {
 
     removeTask(taskType: "MOVE" | "TRANSFER" | "WITHDRAW" | "FILL", id: string): void {
 
-        console.log(id)
-        console.log(taskType)
+        //const creepName = this.rootMem['task'][taskType][id]["creepName"]
 
-        const creepName = this.rootMem['task'][taskType][id]["creepName"]
-        console.log(creepName)
-
-        if (creepName && Memory.creeps[creepName]) {
-            this.updateCreepStatus(creepName, "Idle");
-        }
-        delete this.rootMem['task'][taskType][id];
+        // if (creepName && Memory.creeps[creepName]) {
+        //     this.updateCreepStatus(creepName, "Idle");
+        // }
+        if (this.rootMem['task'][taskType][id])
+            delete this.rootMem['task'][taskType][id];
     }
 
     getTasksWithNullCreepName(type: "MOVE" | "TRANSFER" | "WITHDRAW" | "FILL"): string[] {
@@ -118,15 +115,16 @@ export class LogisticStationMem {
     getCreepTask(creepName: string): {
         id: string;
         type: "MOVE" | "TRANSFER" | "WITHDRAW" | "FILL";
-        status: "InProcess" | "Done" | "Idle"; }
+        status: "InProcess" | "TaskDone" | "TaskConfirmed" |"Idle"; }
     {
         return Memory['creeps'][creepName]['task'];
     }
 
-    updateCreepStatus(creepName: string, status: "InProcess" | "Done" | "Idle"): void {
+    updateCreepStatus(creepName: string, status: 'InProcess' | 'TaskDone' | 'TaskConfirmed' | 'Idle'): void {
         Memory['creeps'][creepName]['task']['status'] = status;
     }
-    updateCreepTask(creepName: string, taskId: string, type:"MOVE" | "TRANSFER" | "WITHDRAW" | "FILL",  status: "InProcess" | "Done" | "Idle"): void {
+    updateCreepTask(creepName: string, taskId: string, type:"MOVE" | "TRANSFER" | "WITHDRAW" | "FILL",
+                    status: 'InProcess' | 'TaskDone' | 'TaskConfirmed' | 'Idle'): void {
         Memory['creeps'][creepName]['task'] = {
             id: taskId,
             type: type,

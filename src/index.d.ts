@@ -91,8 +91,12 @@ interface CreepMemory {
     task?: {
         id: string;
         type: 'MOVE' | 'TRANSFER' | 'WITHDRAW' | 'FILL';
-        status: 'InProcess' | 'TaskDone' | 'Idle';
-
+        status: 'InProcess' | 'TaskDone' | 'TaskConfirmed' | 'Idle';
+        // InProcess -> TaskDone -> TaskConfirmed -> Idle
+        // Station: assign task to Idle creep (Idle -> InProcess)
+        // Transporter: execute task (InProcess -> TaskDone)
+        // Station: Delete complete task (TaskDone -> TaskConfirmed)
+        // Transporter: execute finish stage (TaskConfirmed -> Idle)
     } | any;
 }
 type CreepRole = HarvesterRole | TransporterRole | BuilderRole | UpgraderRole;

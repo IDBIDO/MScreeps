@@ -193,7 +193,21 @@ export class LogisticStation extends Station{
 
 
 
-
+    private taskAssignOrder() {
+        const storageId = this.access_memory.getStorageId();
+        if (!storageId) return;
+        const storage = Game.getObjectById(storageId as Id<StructureContainer> | Id<StructureStorage>);
+        if (!storage) return;
+        if (storage.store.getFreeCapacity() > 0) {
+            this.assignTask(this.access_memory.getTasksWithNullCreepName("WITHDRAW"), "WITHDRAW");
+            this.assignTask(this.access_memory.getTasksWithNullCreepName("MOVE"), "MOVE");
+            this.assignTask(this.access_memory.getTasksWithNullCreepName("TRANSFER"), "TRANSFER");
+        } else {
+            this.assignTask(this.access_memory.getTasksWithNullCreepName("TRANSFER"), "TRANSFER");
+            this.assignTask(this.access_memory.getTasksWithNullCreepName("WITHDRAW"), "WITHDRAW");
+            this.assignTask(this.access_memory.getTasksWithNullCreepName("MOVE"), "MOVE");
+        }
+    }
 
     maintenance(): void {
 
@@ -206,9 +220,10 @@ export class LogisticStation extends Station{
         this.fillCreepControl();
 
         this.assignFillTask();
-        this.assignTask(this.access_memory.getTasksWithNullCreepName("WITHDRAW"), "WITHDRAW");
-        this.assignTask(this.access_memory.getTasksWithNullCreepName("MOVE"), "MOVE");
-        this.assignTask(this.access_memory.getTasksWithNullCreepName("TRANSFER"), "TRANSFER");
+        this.taskAssignOrder();
+        //this.assignTask(this.access_memory.getTasksWithNullCreepName("WITHDRAW"), "WITHDRAW");
+        //this.assignTask(this.access_memory.getTasksWithNullCreepName("MOVE"), "MOVE");
+        //this.assignTask(this.access_memory.getTasksWithNullCreepName("TRANSFER"), "TRANSFER");
 
         this.creepNumControl();
         //this.assignTaskToCreep();
@@ -253,13 +268,13 @@ export class LogisticStation extends Station{
             if (creepDeadTick[creepName] && Game.creeps[creepName]) {
                 const creepTaskStatus = this.access_memory.getCreepTask(creepName);
                 // if task is Done, delete the task
-                if (creepTaskStatus.status === 'Done') {
+                if (creepTaskStatus.status === 'TaskDone') {
                     //this.access_memory.updateCreepStatus(creepName, 'Idle')
                     if (creepTaskStatus.type !== 'FILL') {
                         this.access_memory.removeTask(creepTaskStatus.type, creepTaskStatus.id);
                         //console.log("eliminateCompleteTask function: " + creepName + " " + creepTaskStatus.type + " " + creepTaskStatus.id)
                     }
-                    this.access_memory.updateCreepStatus(creepName, 'Idle')
+                    this.access_memory.updateCreepStatus(creepName, 'TaskConfirmed')
                 }
             }
         }
@@ -288,10 +303,10 @@ export class LogisticStation extends Station{
         for (let creepName in creepDeadTick) {
             // if creep is dead, delete the creepDeadTick
             // creep no spawning AND creep no exist
-            if (creepDeadTick[creepName] && creepDeadTick[creepName] < Game.time && Game.creeps[creepName] == null) {
+            if (creepDeadTick[creepName] && creepDeadTick[creepName] < Game.time) {
 
                 const creepTaskStatus = this.access_memory.getCreepTask(creepName);
-                if (creepTaskStatus.status === 'InProcess' || creepTaskStatus.status === 'Done') {
+                if (creepTaskStatus.status === 'InProcess' || creepTaskStatus.status === 'TaskDone') {
                     if (creepTaskStatus.type !== 'FILL')
                         this.access_memory.removeCreepNameFromTask(creepTaskStatus.type, creepTaskStatus.id, creepName)
                     else {
@@ -309,21 +324,39 @@ export class LogisticStation extends Station{
     private eliminateOldCreep() {
         const creepDeadTick = this.access_memory.getCreepDeadTick();
         for (let creepName in creepDeadTick) {
-            if (creepDeadTick[creepName] && creepDeadTick[creepName] + 50 < Game.time) {
+            if (creepDeadTick[creepName] && creepDeadTick[creepName] + 30 < Game.time) {
                 const creepTaskStatus = this.access_memory.getCreepTask(creepName);
-                if (creepTaskStatus.status != "InProcess") {
-                    if (creepTaskStatus.status === 'Done') {
+                switch (creepTaskStatus.status) {
+                    case 'InProcess':
+                        break;
+                    case 'TaskDone':
                         if (creepTaskStatus.type !== 'FILL')
-                         this.access_memory.removeCreepNameFromTask(creepTaskStatus.type, creepTaskStatus.id, creepName)
+                            this.access_memory.removeCreepNameFromTask(creepTaskStatus.type, creepTaskStatus.id, creepName)
                         else {
                             this.access_memory.updateFillTaskCreepName(null);
                         }
-                    }
-                    //this.access_memory.suicideCreep(creepName);
-                    delete creepDeadTick[creepName];
-                    delete Memory.creeps[creepName];
+                        break;
+                    case 'TaskConfirmed':
+                        break;
+                    case 'Idle':
+                        delete creepDeadTick[creepName];
+                        delete Memory.creeps[creepName];
+                        break;
 
                 }
+                // if (creepTaskStatus.status == "InProcess") {
+                //     if (creepTaskStatus.status === 'Done') {
+                //         if (creepTaskStatus.type !== 'FILL')
+                //          this.access_memory.removeCreepNameFromTask(creepTaskStatus.type, creepTaskStatus.id, creepName)
+                //         else {
+                //             this.access_memory.updateFillTaskCreepName(null);
+                //         }
+                //     }
+                //     //this.access_memory.suicideCreep(creepName);
+                //     delete creepDeadTick[creepName];
+                //     delete Memory.creeps[creepName];
+                //
+                // }
             }
         }
 
@@ -459,7 +492,7 @@ export class LogisticStation extends Station{
 
         const transferTaskNum = Object.keys(this.access_memory.getTask().TRANSFER).length
 
-        const controlHeuristic = withdrawTaskNum + moveTaskNum + 1 + Math.floor(transferTaskNum / 3);
+        const controlHeuristic = withdrawTaskNum + moveTaskNum + 1 + transferTaskNum;
         if (creepNum < controlHeuristic) { this.addCreep(); return;     }
         else if (creepNum == controlHeuristic) {
             const fillTaskCreepName = this.access_memory.getFillTaskCreepName();
