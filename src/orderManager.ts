@@ -41,7 +41,7 @@ export class OrderManager {
 
         const upgraderStationList = this.rootMem['dpt_upgrade'];
         for (let stationType in upgraderStationList) {
-            this.sendOrder('SEARCH_BUILDING_TASK', {}, 'dpt_upgrade', stationType as UpgraderStationType);
+            this.sendOrder('SEARCH_BUILDING_TASK', {}, 'dpt_upgrade', stationType as UpgradeStationType);
             //this.sendOrder('UPDATE_CREEP_NUM', {}, 'dpt_upgrade', stationType as UpgraderStationType);
         }
 

@@ -2,9 +2,9 @@ export class UpgradeStationMem {
     roomName: string;
 
     rootMem: {};
-    stationType: UpgraderStationType;
+    stationType: UpgradeStationType;
 
-    constructor(roomName: string, stationName: UpgraderStationType) {
+    constructor(roomName: string, stationName: UpgradeStationType) {
         this.roomName = roomName;
         this.stationType = stationName;
         this.rootMem = Memory['colony'][roomName]['dpt_upgrade'][stationName] as UpgradeStationMemory;

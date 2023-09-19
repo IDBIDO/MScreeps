@@ -7,7 +7,7 @@ export class UpgradeStation extends Station{
 
     access_memory: UpgradeStationMem;
 
-    constructor(roomName: string, stationType: UpgraderStationType) {
+    constructor(roomName: string, stationType: UpgradeStationType) {
         super(roomName, stationType);
         this.access_memory = new UpgradeStationMem(roomName, stationType);
         this.rootObject = Memory['colony'][roomName]['dpt_upgrade'][stationType];

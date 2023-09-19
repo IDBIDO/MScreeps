@@ -6,7 +6,7 @@ const upgraderRole:{
 } = {
     upgrader: (): ICreepConfig => ({
         source: (creep: Creep): boolean => {
-            const upgraderStationMem = new UpgradeStationMem(creep.memory.roomName, creep.memory.workStationID as UpgraderStationType);
+            const upgraderStationMem = new UpgradeStationMem(creep.memory.roomName, creep.memory.workStationID as UpgradeStationType);
             const workPosEntranceRef = upgraderStationMem.getWorkPosEntrance(upgraderStationMem.getSourceInfo().type);
             const workPosEntrance = upgraderStationMem.getWorkPos(upgraderStationMem.getSourceInfo().type)[workPosEntranceRef];
             if (creep.pos.isEqualTo(workPosEntrance[0], workPosEntrance[1])) {
@@ -17,7 +17,7 @@ const upgraderRole:{
             return false;
         },
         target: (creep: Creep): boolean => {
-            const upgraderStationMem = new UpgradeStationMem(creep.memory.roomName, creep.memory.workStationID as UpgraderStationType);
+            const upgraderStationMem = new UpgradeStationMem(creep.memory.roomName, creep.memory.workStationID as UpgradeStationType);
             const sourceInfo = upgraderStationMem.getSourceInfo();
             if (!sourceInfo) return false;      // no sourceInfo, do not do anything
             const source = Game.getObjectById(sourceInfo.id as Id<StructureContainer>);

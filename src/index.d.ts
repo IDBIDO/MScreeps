@@ -110,6 +110,8 @@ type BuilderRole = 'builder' | 'repairer';
 
 type UpgraderRole = 'upgrader';
 
+type ClaimerRole = 'claimer' | 'reserver' | 'attackerController';
+
 /***************************************************
  *                 CREEP BEHAVIOUR                *
  ***************************************************/
@@ -168,7 +170,7 @@ type GeneralOrder = 'UPDATE_BUILDING_INFO' | 'SEARCH_BUILDING_TASK' | 'UPDATE_CR
 
 type CreepControlOrder = 'ADD_CREEP' | 'REMOVE_CREEP' | GeneralOrder;
 
-type StationType = HarvestStationType | LogisticStationType | BuildStationType | UpgraderStationType
+type StationType = HarvestStationType | LogisticStationType | BuildStationType | UpgradeStationType
 
 /***************************************************
  *                 HARVEST STATION                 *
@@ -243,7 +245,7 @@ interface UpgradeStationMemory extends StationMemory {
 
 }
 
-type UpgraderStationType = 'internal_upgrade';
+type UpgradeStationType = 'internal_upgrade';
 
 /***************************************************
  *                 LOGISTIC STATION                *

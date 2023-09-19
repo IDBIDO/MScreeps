@@ -10,6 +10,7 @@ import {RealiseLogisticOrder} from "@/stations/realiseLogisticOrder";
 import {LogisticStation} from "@/stations/logisticStation";
 import {BuildStation} from "@/stations/buildStation";
 import {UpgradeStation} from "@/stations/upgradeStation";
+import {getColonyCreepCostPerTick, getColonyEnergyHarvestPerTick} from "@/colonyManagement/colonyEnergyCost";
 
 
 export function mount() {
@@ -109,9 +110,11 @@ module.exports.loop = function() {
     runLogisticCreep();
     runBuildCreep();
 
-
+    const energyHarvest = getColonyEnergyHarvestPerTick('W7N7');
+    console.log(energyHarvest)
+    const energyCost = getColonyCreepCostPerTick('W7N7');
+    console.log(energyCost);
+    Game.map.visual.text("ssss", new RoomPosition(25,25,'W7N7'), {color: '#FF0000', fontSize: 60});
     //api.createColony("W7N7");
 }
 
-// TODO 1. new transporter creep status: doneButNotFinish
-// TODO 2. check transporter creep transfer behavior
